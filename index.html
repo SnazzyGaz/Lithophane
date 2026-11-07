@@ -650,7 +650,7 @@ const Core = (() => {
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
-const APP_VERSION = '0.6.1';
+const APP_VERSION = '0.6.2';
 const ORT_DIST = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/';
 const HF = 'https://huggingface.co';
 const NORMAL_MODELS = {
@@ -892,6 +892,7 @@ function prepUploadNormal() {
 }
 async function onImage(file) {
   try { S.img = await loadImg(file); } catch (e) { setStatus('picStatus', 'Could not read that picture.', 'err'); return; }
+  setShape('flat', true);   // a new picture starts as a flat plate; pick the shape after Tone
   S.imgName = (file.name || 'lithophane').replace(/\.[^.]+$/, ''); S.W = S.H = 0; S.autoShown = false;
   S.mogeNormal = S.mogeMask = null; S.nrmImg = null; S.upNormal = null; $('btnClrNrm').hidden = true;
   resetMask(); setupWorking();
@@ -910,7 +911,7 @@ async function openProject(file) {   // a Relief Forge project: its picture and 
     if (J.app !== 'relief-forge') throw new Error('not a Relief Forge project');
     const asFile = async key => { const nm = J.files && J.files[key]; if (!nm) return null; const u = await get(nm); return u ? new File([u], nm, { type: 'image/' + (nm.split('.').pop() === 'jpg' ? 'jpeg' : nm.split('.').pop()) }) : null; };
     const imgF = await asFile('image'); if (!imgF) throw new Error('project has no image');
-    S.img = await loadImg(imgF); S.imgName = J.imgName || file.name.replace(/\.[^.]+$/, ''); S.autoShown = false;
+    S.img = await loadImg(imgF); setShape('flat', true); S.imgName = J.imgName || file.name.replace(/\.[^.]+$/, ''); S.autoShown = false;
     const nf = await asFile('normal_upload'); S.nrmImg = nf ? await loadImg(nf) : null; $('btnClrNrm').hidden = !S.nrmImg;
     if (J.settings && J.settings.ui && J.settings.ui.workRes && [...$('workRes').options].some(o => o.value == J.settings.ui.workRes)) $('workRes').value = J.settings.ui.workRes;
     S.W = S.H = 0; S.mogeNormal = S.mogeMask = null; resetMask(); setupWorking();
@@ -1853,9 +1854,9 @@ function setMode(m) { S.mode = m; updateFields(); setTimeout(keepSave, 0); for (
   autoShow(); $('modeHelp').textContent = m === 'relit' ? 'The AI rebuilds the surface and you choose the light, so even a flat or badly lit picture comes out looking carved. Uses the same bake as Relief Forge.' : 'The picture\'s own light and dark becomes thickness, as in most lithophane makers. No model needed.';
   schedule(); }
 function shapeBtns() { const s = S.shape, pv = $('revProf').value; for (const b of document.querySelectorAll('#shapeBtns button')) b.classList.toggle('on', b.dataset.s === s && (!b.dataset.p || b.dataset.p === pv || (pv !== 'vase' && pv !== 'bell' && b.dataset.p === 'vase'))); }
-function setShape(s) { S.shape = s; shapeBtns(); setTimeout(keepSave, 0); $('shapeHelp').textContent = SHAPES[s];
+function setShape(s, stay) { S.shape = s; shapeBtns(); setTimeout(keepSave, 0); $('shapeHelp').textContent = SHAPES[s];
   if (!FLATLIKE.has(s) && s !== 'arc') $('lt3Src').value = 'bulb'; else $('lt3Src').value = 'even';
-  if (S.img && haveSource() && S.view !== '3d' && !['render', 'lit', 'thick'].includes(S.view)) setView('3d'); else schedule(); }
+  if (!stay && S.img && haveSource() && S.view !== '3d' && !['render', 'lit', 'thick'].includes(S.view)) setView('3d'); else schedule(); }
 const CAPS = {
   input: '<b>Picture</b> · the picture you opened.',
   normal: '<b>Normals</b> · which way each bit of the surface faces, from the AI. The colours are directions, not the final look.',
@@ -1969,7 +1970,7 @@ document.querySelector('.side').addEventListener('change', keepSoon); document.q
 $('btnReset').onclick = () => { for (const e of keepEls()) if (e.id in DEFAULTS) { if (e.type === 'checkbox') e.checked = DEFAULTS[e.id]; else e.value = DEFAULTS[e.id]; }
   try { localStorage.removeItem(KEEP_KEY); } catch {} for (const id of ['ltTmin', 'ltTmax']) $(id).dispatchEvent(new Event('change')); S.ltB = null; setMode('relit'); setShape('flat'); lt3dUniforms(); T3.framedFor = null; schedule(10); };
 const kept = keepLoad();
-S.step = 'pic'; setMode(kept && kept.mode === 'photo' ? 'photo' : 'relit'); { const sh = kept && SHAPES[kept.shape] ? kept.shape : 'flat'; setShape(sh); } goStep('pic');
+S.step = 'pic'; setMode(kept && kept.mode === 'photo' ? 'photo' : 'relit'); setShape('flat'); goStep('pic');   // always start flat; last shape is not restored
 $('ltAzV').textContent = $('ltAz').value + '°'; $('ltElV').textContent = $('ltEl').value + '°'; $('ltToneV').textContent = $('ltTone').value + '%'; $('ltGammaV').textContent = (+$('ltGamma').value).toFixed(2); $('bulbHV').textContent = $('bulbH').value + '%';
 $('ltConV').textContent = $('ltCon').value + '%'; $('ltBriV').textContent = (+$('ltBri').value > 0 ? '+' : '') + $('ltBri').value; lt3dUniforms(); updateFields(); updateButtons(); showCanvas(false);
 if (navigator.gpu) navigator.gpu.requestAdapter().then(a => { if (!a) setStatus('statNormal', 'No WebGPU graphics in this browser: the model would run on the processor (slow). Use Chrome or Edge.', 'err'); });

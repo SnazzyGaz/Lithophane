@@ -28,7 +28,7 @@ From the maker of [Relief Forge](https://snazzygaz.github.io/DepthNormal/).
 ## Getting started
 
 1. **Picture:** open a picture, or a `.relief` project from Relief Forge.
-2. **Light:** set the light on the carving, or the photo's contrast (called **Tone** in Photo mode). It starts as a flat plate, so you can get the look and the heights right first.
+2. **Light:** set the light on the carving, or the photo's contrast (called **Tone** in Photo mode). Each new picture starts as a flat plate, so you can get the look and the heights right first. The last shape you used is not remembered.
 3. **Shape:** then put it on a shape and set its size.
 4. **Export:** add fittings or a base, then save the STL.
 
