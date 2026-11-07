@@ -14,6 +14,7 @@ function createWindow() {
     minWidth: 1000,
     minHeight: 700,
     title: 'Relief Forge Litho',
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,

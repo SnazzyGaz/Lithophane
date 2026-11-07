@@ -6,6 +6,8 @@
 
 From the maker of [Relief Forge](https://snazzygaz.github.io/DepthNormal/).
 
+![A lithophane preview of a sculpture in Relief Forge Litho](images/preview.png)
+
 ---
 
 ## Two looks
@@ -36,7 +38,9 @@ From the maker of [Relief Forge](https://snazzygaz.github.io/DepthNormal/).
 
 ## A window on your computer
 
-You can run the same app in its own desktop window. Install [Node.js](https://nodejs.org) (a current LTS version), open a terminal in this folder, then run:
+A portable Windows app is on the [Releases](https://github.com/SnazzyGaz/Lithophane/releases/latest) page (the file named like `Relief-Forge-Litho-*-Windows-x64.exe`). It is unsigned, so Windows may show a SmartScreen warning. Only run builds from a source you trust.
+
+You can also run the same app from this folder. Install [Node.js](https://nodejs.org) (a current LTS version), open a terminal here, then run:
 
 ```sh
 npm install
