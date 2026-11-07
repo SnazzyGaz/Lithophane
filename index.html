@@ -97,6 +97,11 @@ main{display:flex;flex-direction:column;min-width:0;min-height:0}
 .foot .sl{min-width:170px}
 .foot .grow{flex:1}
 .mono{font-family:var(--mono)}
+.swatch{display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid var(--line2);flex:none}
+.brush{position:fixed;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.7);transform:translate(-50%,-50%);pointer-events:none;z-index:5}
+.brush.rm{border-color:var(--err)}
+.stage.painting canvas#view{cursor:none}
+.stage.picking canvas#view{cursor:crosshair}
 
 .gbar{margin:10px 14px 0;padding:9px 11px;border-radius:9px;background:var(--accbg);border:1px solid var(--accline);font-size:12.5px;color:var(--ink2);line-height:1.45}
 .gbar:empty{display:none} .gbar b{color:var(--acc2);font-weight:600}
@@ -262,19 +267,38 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
         <span>Light direction</span><span class="sl"><input type="range" id="ltAz" min="0" max="359" step="1" value="323"><span class="v" id="ltAzV">323°</span></span>
         <span>Light height</span><span class="sl"><input type="range" id="ltEl" min="10" max="85" step="1" value="41"><span class="v" id="ltElV">41°</span></span>
         <span title="Mixes in the photo's own light and dark (its colours and tones) on top of the relit carving. 0 = pure relit, as in Relief Forge.">Photo tone</span><span class="sl"><input type="range" id="ltTone" min="0" max="100" step="1" value="0"><span class="v" id="ltToneV">0%</span></span>
+        <span title="Lays the picture over the lit carving in soft-light mode, like the Photoshop layer mode. Fine detail: only the picture's small light-and-dark texture (hair, engraving, grain), so detail pops and the lighting stays. Whole picture: the picture's own light and dark too, for more punch.">Soft light</span><select id="ltSL"><option value="off" selected>Off</option><option value="detail">Fine detail</option><option value="pic">Whole picture</option></select>
+        <span data-sl="detail pic" title="How strongly the soft-light layer works. 100% = the normal blend; above 100% pushes it further.">Soft light amount</span><span class="sl" data-sl="detail pic"><input type="range" id="ltSLAmt" min="0" max="200" step="1" value="100"><span class="v" id="ltSLAmtV">100%</span></span>
+        <span data-sl="detail" title="Size of the detail that is picked out, in working-size pixels. Small = fine texture; larger = bigger forms too.">Detail size</span><span class="sl" data-sl="detail"><input type="range" id="ltSLRad" min="1" max="24" step="0.5" value="3"><span class="v" id="ltSLRadV">3 px</span></span>
       </div>
+    </div>
+    <div class="card" id="maskCard">
+      <h3>Background mask <span class="pill" id="maskPill">none</span></h3>
+      <p class="lead">Tells the subject from the background, so <b>Background</b> (in Tone, below) can make it dark or glowing. Check it on the <b>Mask</b> view.</p>
+      <div class="kv" style="margin-top:8px">
+        <span title="Where the mask comes from. Auto uses the picture's transparency, then the AI mask (Relit), then a flat background colour if one was found or picked.">Mask from</span><select id="maskSrc"><option value="auto" selected>Auto</option><option value="alpha">Transparency</option><option value="moge">AI mask (Relit)</option><option value="key">Flat colour</option><option value="paint">Paint only</option></select>
+        <span data-mk="key">Background colour</span><span class="row" data-mk="key" style="margin:0"><button id="btnPick" class="mini" title="Click, then click the background in the picture to set its colour exactly.">Pick colour</button><span id="keySw" class="swatch" hidden></span><span class="help mono" id="keyTxt"></span></span>
+        <span data-mk="key" title="Higher: more counts as background. Lower: more is kept. 50 = set for you from the picture.">Tolerance</span><span class="sl" data-mk="key"><input type="range" id="keyTol" min="0" max="100" step="1" value="50"><span class="v" id="keyTolV">50</span></span>
+        <span title="Small background-coloured spots enclosed by the subject (reflections, noise) stay part of the subject.">Fill specks</span><label class="chk" style="margin:0"><input type="checkbox" id="mkSpecks" checked> small holes in the subject</label>
+        <span title="Softens the edge of the cut-out, so the subject ramps into the background instead of a hard step. 0 = hard edge, as in Relief Forge.">Edge softness</span><span class="sl"><input type="range" id="mkSoft" min="0" max="8" step="0.25" value="0"><span class="v" id="mkSoftV">0 px</span></span>
+      </div>
+      <div class="sub">Paint the mask</div>
+      <div class="seg"><button id="pKeep" title="Paint areas that should be subject">Keep</button><button id="pRemove" title="Paint areas that should be background">Remove</button></div>
+      <div class="kv" style="margin-top:8px"><span>Brush size</span><span class="sl"><input type="range" id="pSize" min="0.3" max="12" step="0.1" value="2"><span class="v" id="pSizeV">2.0%</span></span></div>
+      <div class="row"><label class="chk" style="margin:0"><input type="checkbox" id="pSoft" checked> Soft edge</label><span class="grow"></span><button id="pUndo" class="mini" disabled>Undo</button><button id="pClear" class="mini" disabled>Clear</button></div>
+      <p class="help" id="pInfo" style="margin:7px 0 0">Pick Keep or Remove, then paint on the Mask view. Hold Shift for the opposite, [ and ] change the size, Esc stops.</p>
+      <div class="status" id="maskInfo"></div>
     </div>
     <div class="card">
       <h3>Tone</h3>
       <div class="kv">
-        <span title="Keep the background as part of the picture, or separate it (from a transparent background, or the AI mask in Relit) and make it dark or glowing.">Background</span><select id="ltBg"><option value="keep" selected>Keep it</option><option value="dark">Make it dark (thick)</option><option value="glow">Make it glow (thin)</option></select>
+        <span title="Keep the background as part of the picture, or separate it with the Background mask (above) and make it dark or glowing.">Background</span><select id="ltBg"><option value="keep" selected>Keep it</option><option value="dark">Make it dark (thick)</option><option value="glow">Make it glow (thin)</option></select>
         <span title="Spreads or squeezes the tones. 100% = as is.">Contrast</span><span class="sl"><input type="range" id="ltCon" min="40" max="200" step="1" value="100"><span class="v" id="ltConV">100%</span></span>
         <span title="Lighter (thinner) or darker (thicker) overall.">Brightness</span><span class="sl"><input type="range" id="ltBri" min="-40" max="40" step="1" value="0"><span class="v" id="ltBriV">0</span></span>
         <span title="Lifts the very darkest shadows a little, so they become rounded bumps instead of sudden full-thickness cliffs.">Shadow softness</span><select id="ltSoft"><option value="0">Off</option><option value="0.04">Light</option><option value="0.08" selected>Medium</option><option value="0.15">Strong</option></select>
         <span title="Below 1 brightens the mid-tones (thinner), above 1 darkens them. 1 = as Relief Forge.">Mid-tones</span><span class="sl"><input type="range" id="ltGamma" min="0.4" max="2.5" step="0.05" value="1"><span class="v" id="ltGammaV">1.00</span></span>
         <span>Invert</span><label class="chk" style="margin:0"><input type="checkbox" id="ltInv"> bright ↔ dark</label>
       </div>
-      <div class="status" id="maskInfo"></div>
     </div>
     <div class="card">
       <h3>Light inside</h3>
@@ -347,6 +371,7 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
     <span class="vlab">Inputs</span>
     <button class="tab on" data-v="input">Picture</button>
     <button class="tab" data-v="normal" disabled>Normals</button>
+    <button class="tab" data-v="mask" disabled>Mask</button>
     <span class="vlab" style="margin-left:10px">Result</span>
     <button class="tab" data-v="3d" disabled>3D</button>
     <button class="tab" data-v="lit" disabled>Backlit</button>
@@ -373,6 +398,7 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
     </div>
     <canvas id="view" class="v2" hidden></canvas>
     <div id="v3d" hidden title="Drag to spin, scroll to zoom"></div>
+    <div id="brush" class="brush" hidden></div>
   </div>
   <div class="foot" id="foot3d" hidden>
     <span>Light in 3D</span><select id="lt3Src" style="width:auto;padding:3px 6px"><option value="even">Even, behind</option><option value="bulb">Bulb</option></select>
@@ -622,7 +648,7 @@ const Core = (() => {
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
-const APP_VERSION = '0.5.1';
+const APP_VERSION = '0.6.0';
 const ORT_DIST = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/';
 const HF = 'https://huggingface.co';
 const NORMAL_MODELS = {
@@ -839,13 +865,17 @@ function setupWorking() {
   S.lum = lum; S.meanColor = `rgb(${r / N | 0},${g / N | 0},${b / N | 0})`;
   let tr = 0; const al = new Float32Array(N); for (let i = 0; i < N; i++) { al[i] = d[i * 4 + 3] / 255; tr += al[i] < 0.5 ? 1 : 0; }
   S.alpha = tr > N * 0.005 ? al : null;
+  S.work = d; S.keyAuto = S.alpha ? null : estimateBorderColour(d, S.W, S.H);
   // maps made at another working size follow it
   if (W0 && (W0 !== S.W || H0 !== S.H)) {
     const rs = a => a && Core.resample(a, W0, H0, S.W, S.H);
     if (S.mogeNormal) { const n = S.mogeNormal, o = [rs(n.nx), rs(n.ny), rs(n.nz)]; Core.renormNormals(o); S.mogeNormal = { nx: o[0], ny: o[1], nz: o[2] }; }
     S.mogeMask = rs(S.mogeMask);
+    if (S.paint) { S.paint = rs(S.paint); PT.undo = []; }
   }
-  S.gcCache = S.eaCache = null; S.ltB = null;
+  if (S.key) buildKey(S.key.color, S.key.sd, S.key.auto);
+  else if (S.keyAuto && S.keyAuto.confident) buildKey(S.keyAuto.color, S.keyAuto.sd, true);   // a plain backdrop is found for you
+  S.gcCache = S.eaCache = S.slCache = S.mkCache = null; S.ltB = null;
   prepUploadNormal();
 }
 function prepUploadNormal() {
@@ -862,7 +892,7 @@ async function onImage(file) {
   try { S.img = await loadImg(file); } catch (e) { setStatus('picStatus', 'Could not read that picture.', 'err'); return; }
   S.imgName = (file.name || 'lithophane').replace(/\.[^.]+$/, ''); S.W = S.H = 0; S.autoShown = false;
   S.mogeNormal = S.mogeMask = null; S.nrmImg = null; S.upNormal = null; $('btnClrNrm').hidden = true;
-  setupWorking();
+  resetMask(); setupWorking();
   setStatus('picStatus', `${file.name} · ${S.img.naturalWidth}×${S.img.naturalHeight}${S.alpha ? ' · has transparency' : ''}`, 'ok');
   if (S.alpha && $('ltBg').value === 'keep') $('ltBg').value = 'dark';   // a cut-out picture: its background goes dark unless you say otherwise
   if (S.mode === 'relit' && !S.normalSess) setStatus('runStatus', 'Load the normal model above, then press Make normals. Or switch to Photo (classic), which needs no model.');
@@ -881,12 +911,14 @@ async function openProject(file) {   // a Relief Forge project: its picture and 
     S.img = await loadImg(imgF); S.imgName = J.imgName || file.name.replace(/\.[^.]+$/, ''); S.autoShown = false;
     const nf = await asFile('normal_upload'); S.nrmImg = nf ? await loadImg(nf) : null; $('btnClrNrm').hidden = !S.nrmImg;
     if (J.settings && J.settings.ui && J.settings.ui.workRes && [...$('workRes').options].some(o => o.value == J.settings.ui.workRes)) $('workRes').value = J.settings.ui.workRes;
-    S.W = S.H = 0; S.mogeNormal = S.mogeMask = null; setupWorking();
+    S.W = S.H = 0; S.mogeNormal = S.mogeMask = null; resetMask(); setupWorking();
     const map = async key => { const m = J.maps && J.maps[key]; if (!m) return null; const u = await get('maps/' + key + '.u16'); if (!u) return null;
       const a = dq16(u, m.lo, m.hi); return (J.W === S.W && J.H === S.H) ? a : Core.resample(a, J.W, J.H, S.W, S.H); };
     const nx = await map('nx'), ny = await map('ny'), nz = await map('nz');
     S.mogeNormal = nx && ny && nz ? (Core.renormNormals([nx, ny, nz]), { nx, ny, nz }) : null; S.nrmFrom = 'project';
     S.mogeMask = await map('mogeMask');
+    { const pm = await map('paint'); if (pm) for (let i = 0; i < pm.length; i++) if (Math.abs(pm[i]) < 4e-5) pm[i] = 0;   // the project's hand-painted mask
+      S.paint = pm && pm.some(v => v !== 0) ? pm : null; }
     // the project's own settings for the normal clean-ups
     const ui = (J.settings && J.settings.ui) || {};
     if (ui.gridNrm != null) $('gridNrm').checked = !!ui.gridNrm; if (ui.edgeNrm != null) $('edgeNrm').checked = !!ui.edgeNrm; if (ui.edgeAmt != null) $('edgeAmt').value = ui.edgeAmt;
@@ -917,18 +949,97 @@ function activeNormal() {
   S.eaCache = { src: n, lum: S.lum, k, out: { nx: o[0], ny: o[1], nz: o[2] } }; $('edgeInfo').textContent = `(${((performance.now() - t0) / 1000).toFixed(1)} s)`;
   return S.eaCache.out;
 }
-function maskSource() { if ($('ltBg').value === 'keep') return 'off'; return S.alpha ? 'alpha' : S.mogeMask && S.mode === 'relit' ? 'moge' : 'none'; }
-function currentMask() {   // hard mask as Relief Forge's (coverage above 0.02), from transparency or the AI mask
-  const src = maskSource(), N = S.W * S.H;
-  if (src === 'alpha' && S.alpha) { const M = new Uint8Array(N); for (let i = 0; i < N; i++) M[i] = Math.min(1, Math.max(0, (S.alpha[i] - 0.5) / 1 + 0.5)) > 0.02 ? 1 : 0; return M; }
-  if (src === 'moge' && S.mogeMask && S.mogeMask.length === N) { const M = new Uint8Array(N), w = 0.08; for (let i = 0; i < N; i++) { const t = Math.min(1, Math.max(0, (S.mogeMask[i] - (0.5 - w)) / (2 * w))); M[i] = t * t * (3 - 2 * t) > 0.02 ? 1 : 0; } return M; }
-  return null;
+// ---------- background mask: transparency, AI mask, flat colour (as Relief Forge's), plus hand paint ----------
+// dominant colour along the picture's border, refined to the mean of samples near it (Relief Forge's)
+function estimateBorderColour(d, W, H) {
+  const bs = [], step = Math.max(1, (2 * (W + H) / 3000) | 0);
+  for (let x = 0; x < W; x += step) bs.push(x, (H - 1) * W + x);
+  for (let y = 0; y < H; y += step) bs.push(y * W, y * W + W - 1);
+  const bins = new Map();
+  for (const i of bs) { const k = (d[i * 4] >> 4) << 8 | (d[i * 4 + 1] >> 4) << 4 | (d[i * 4 + 2] >> 4); bins.set(k, (bins.get(k) || 0) + 1); }
+  let best = 0, bk = 0; for (const [k, v] of bins) if (v > best) { best = v; bk = k; }
+  let m = [((bk >> 8) & 15) * 16 + 8, ((bk >> 4) & 15) * 16 + 8, (bk & 15) * 16 + 8], inl = [];
+  for (let it = 0; it < 3; it++) {
+    inl = bs.filter(i => Math.max(Math.abs(d[i * 4] - m[0]), Math.abs(d[i * 4 + 1] - m[1]), Math.abs(d[i * 4 + 2] - m[2])) <= 26);
+    if (!inl.length) break; m = [0, 1, 2].map(k => inl.reduce((a, i) => a + d[i * 4 + k], 0) / inl.length);
+  }
+  let sd = 0; for (const i of inl) { const dv = Math.max(Math.abs(d[i * 4] - m[0]), Math.abs(d[i * 4 + 1] - m[1]), Math.abs(d[i * 4 + 2] - m[2])); sd += dv * dv; }
+  sd = inl.length ? Math.sqrt(sd / inl.length) : 99; const frac = inl.length / bs.length;
+  return { color: m.map(v => Math.round(v)), sd, frac, confident: frac >= 0.3 && sd < 10 };
+}
+// difference from the background colour. Saturated backdrops compare hue + saturation, so shadows cast on them stay background;
+// grey / black / white backdrops compare plain RGB (Relief Forge's)
+function keyMetric(m) {
+  const chroma = Math.max(...m) - Math.min(...m) > 60;
+  if (!chroma) return { chroma, f: (r, g, b) => Math.max(Math.abs(r - m[0]), Math.abs(g - m[1]), Math.abs(b - m[2])) / 255 };
+  const hs = (r, g, b) => { const mx = Math.max(r, g, b), c = mx - Math.min(r, g, b);
+    const h = c < 1e-6 ? 0 : mx === r ? ((((g - b) / c) % 6) + 6) % 6 : mx === g ? (b - r) / c + 2 : (r - g) / c + 4;
+    return [h * 60, c / (mx + 1e-6), mx]; };
+  const [hb, sb] = hs(m[0], m[1], m[2]);
+  return { chroma, f: (r, g, b) => { const [h, s, v] = hs(r, g, b); if (v < 40) return 1;
+    let dh = Math.abs(h - hb) % 360; if (dh > 180) dh = 360 - dh;
+    const hw = Math.min(1, Math.max(0, 1 - (dh - 6) / 24)), sw = Math.min(1, Math.max(0, (s - 0.4 * sb) / (0.3 * sb)));
+    return 1 - hw * sw; } };
+}
+function buildKey(m, sd, auto) {
+  const d = S.work, N = S.W * S.H, km = keyMetric(m), f = new Float32Array(N);
+  for (let i = 0; i < N; i++) f[i] = km.f(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]);
+  S.key = { f, color: m.map(v => v | 0), sd, tol0: km.chroma ? 0.5 : Math.max(14, 4 * (sd || 3)) / 255, chroma: km.chroma, auto: !!auto };
+  S.mkCache = null;
+}
+const keyCut = () => Math.min(0.98, S.key.tol0 * Math.pow(4, (num('keyTol', 50) - 50) / 50));   // 0 → ¼ of the auto cutoff, 100 → 4×
+function maskKind() {
+  const s = $('maskSrc').value, moge = S.mode === 'relit' && S.mogeMask && S.mogeMask.length === S.W * S.H;
+  if (s === 'auto') return S.alpha ? 'alpha' : moge ? 'moge' : S.key ? 'key' : S.paint ? 'paint' : 'none';
+  if (s === 'alpha') return S.alpha ? 'alpha' : 'none';
+  if (s === 'moge') return moge ? 'moge' : 'none';
+  if (s === 'key') return S.key ? 'key' : 'none';
+  return 'paint';
+}
+function maskSource() { return $('ltBg').value === 'keep' ? 'off' : maskKind(); }
+// small background islands enclosed by the subject are specks, not real background (Relief Forge's)
+function fillSpecks(A, W, H) {
+  const N = W * H, bg = new Uint8Array(N); for (let i = 0; i < N; i++) bg[i] = A[i] < 0.98 ? 1 : 0;
+  const lab = Core.labels(bg, W, H), area = new Map(), touch = new Set();
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const l = lab[y * W + x]; if (!l) continue;
+    area.set(l, (area.get(l) || 0) + 1); if (x === 0 || y === 0 || x === W - 1 || y === H - 1) touch.add(l); }
+  const maxA = Math.max(24, N * 0.0003);
+  for (let i = 0; i < N; i++) { const l = lab[i]; if (l && !touch.has(l) && area.get(l) <= maxA) A[i] = 1; }
+}
+function maskBase(kind) {   // soft coverage 0..1 (1 = subject) before paint; cached
+  const W = S.W, H = S.H, N = W * H, src = kind === 'alpha' ? S.alpha : kind === 'moge' ? S.mogeMask : kind === 'key' ? S.key.f : null;
+  const key = [kind, W, H, kind === 'key' ? keyCut() : '', $('mkSpecks').checked].join('|'), c = S.mkCache;
+  if (c && c.key === key && c.src === src) return c.A;
+  const A = new Float32Array(N);
+  if (kind === 'alpha') for (let i = 0; i < N; i++) A[i] = Math.min(1, Math.max(0, src[i]));
+  else if (kind === 'moge') { const w = 0.08; for (let i = 0; i < N; i++) { const t = Math.min(1, Math.max(0, (src[i] - (0.5 - w)) / (2 * w))); A[i] = t * t * (3 - 2 * t); } }
+  else if (kind === 'key') { const cut = keyCut(), w = Math.max(0.01, cut * 0.35); for (let i = 0; i < N; i++) { const t = Math.min(1, Math.max(0, (src[i] - (cut - w)) / (2 * w))); A[i] = t * t * (3 - 2 * t); } }
+  else A.fill(1);
+  if (src && $('mkSpecks').checked) fillSpecks(A, W, H);
+  S.mkCache = { key, src, A }; return A;
+}
+const painted = (a, q) => q > 0 ? a + (1 - a) * q : q < 0 ? a * (1 + q) : a;   // + pulls towards subject, − towards background
+function currentMask() {   // 1 = subject. Hard (coverage above 0.02, as Relief Forge's) unless Edge softness is set
+  const kind = maskSource(); if (kind === 'off' || (kind === 'none' && !S.paint)) return null;
+  const A0 = maskBase(kind), N = S.W * S.H, P = S.paint && S.paint.length === N ? S.paint : null, M = new Float32Array(N);
+  for (let i = 0; i < N; i++) M[i] = (P ? painted(A0[i], P[i]) : A0[i]) > 0.02 ? 1 : 0;
+  const s = num('mkSoft', 0); return s > 0.05 ? Core.blur(M, S.W, S.H, s) : M;
 }
 function maskNote() {
-  const src = maskSource();
-  if (src === 'none') return setStatus('maskInfo', 'Nothing to tell the background from: needs a picture with a transparent background, or AI normals (Relit), which come with an AI mask.', 'err');
-  setStatus('maskInfo', src === 'alpha' ? 'Background found from the picture\'s transparency.' : src === 'moge' ? 'Background found by the AI mask.' : '');
+  const kind = maskKind(), keep = $('ltBg').value === 'keep', P = !!S.paint;
+  const name = { alpha: 'transparency', moge: 'AI mask', key: 'flat colour', paint: 'paint', none: 'paint' }[kind];
+  $('maskPill').textContent = kind === 'none' && !P ? 'none' : name + (P && kind !== 'paint' && kind !== 'none' ? ' + paint' : '');
+  $('maskPill').className = 'pill' + (kind !== 'none' || P ? ' ok' : '');
+  const k = S.key; $('keySw').hidden = !k; if (k) { $('keySw').style.background = `rgb(${k.color.join(',')})`; $('keyTxt').textContent = `rgb(${k.color.join(',')})${k.chroma ? ' · by hue' : ''}${k.auto ? ' · found' : ''}`; } else $('keyTxt').textContent = '';
+  if (kind === 'none' && !P) {
+    const s = $('maskSrc').value;
+    return setStatus('maskInfo', s === 'alpha' ? 'This picture has no transparency: choose another mask.' : s === 'moge' ? 'No AI mask: make AI normals (Relit) first, or choose another mask.'
+      : s === 'key' ? 'No background colour yet: press Pick colour, then click the background.' : 'Nothing to tell the background from yet: press Pick colour (Flat colour) and click the background, paint it, or use AI normals (Relit) or a picture with a transparent background.', keep ? '' : 'err');
+  }
+  const what = kind === 'alpha' ? 'from the picture\'s transparency' : kind === 'moge' ? 'by the AI mask' : kind === 'key' ? (k.auto ? 'from the flat background colour found at the edges' : 'from the picked background colour') : 'by hand';
+  setStatus('maskInfo', keep ? `Mask ready (${what}). Set Background (in Tone, below) to dark or glow to use it.` : `Background found ${what}${P && kind !== 'paint' && kind !== 'none' ? ', with your paint' : ''}.`, keep ? '' : 'ok');
 }
+function maskChanged() { S.ltB = null; maskNote(); updateFields(); if (S.view === 'mask') drawMask(); else schedule(60); }
 
 // ---------- lithophane bake: exactly Relief Forge's ----------
 const LT_TLO = 0.03;
@@ -938,6 +1049,7 @@ async function ltBrightness() {   // brightness 0..1 at working size: what the p
   const W = S.W, H = S.H, N = W * H, M = currentMask(), b = new Float32Array(N);
   if (S.mode === 'photo') { const L = S.lum; for (let i = 0; i < N; i++) b[i] = Math.pow(L[i], 2.2); }   // the photo's tones are gamma-coded; light through plastic is linear
   else { const n = activeNormal(); if (!n) throw new Error('no normals yet: make them (Picture step), open a .relief project, or switch to Photo'); ltShade(n.nx, n.ny, n.nz, b);
+    softLight(b);
     const tone = (+$('ltTone').value || 0) / 100; if (tone > 0) for (let i = 0; i < N; i++) b[i] *= 1 - tone + tone * S.lum[i]; }
   const bg = $('ltBg').value;
   if (M && bg !== 'keep') { const v = bg === 'glow' ? 1 : 0.06; for (let i = 0; i < N; i++) { const m = Math.min(1, Math.max(0, M[i])); b[i] = m * b[i] + (1 - m) * v; } }
@@ -949,6 +1061,18 @@ async function ltBrightness() {   // brightness 0..1 at working size: what the p
   for (let i = 0; i < N; i++) { let v = Math.min(1, Math.max(0, (b[i] - p0) / (p1 - p0 || 1))); if (g !== 1) v = Math.pow(v, g);
     if (ct !== 1 || br !== 0) v = Math.min(1, Math.max(0, (v - 0.5) * ct + 0.5 + br)); if (inv) v = 1 - v; b[i] = lift + (1 - lift) * v; }
   return b;
+}
+// soft light (W3C / Photoshop formula) of the picture over the lit carving, in display (gamma) space.
+// Fine detail = a high-pass of the picture centred on 0.5 (the classic sharpening layer); whole picture = its luminance.
+function softLight(b) {
+  const m = $('ltSL').value, amt = num('ltSLAmt', 100) / 100; if (m === 'off' || !(amt > 0) || !S.lum || S.lum.length !== b.length) return;
+  const N = b.length; let s = S.lum;
+  if (m === 'detail') { const r = num('ltSLRad', 3), c = S.slCache;
+    if (c && c.lum === S.lum && c.r === r) s = c.s;
+    else { const bl = Core.blur(S.lum, S.W, S.H, r); s = new Float32Array(N); for (let i = 0; i < N; i++) s[i] = Math.min(1, Math.max(0, 0.5 + 3 * (S.lum[i] - bl[i]))); S.slCache = { lum: S.lum, r, s }; } }
+  for (let i = 0; i < N; i++) { const B = Math.pow(Math.max(0, b[i]), 1 / 2.2), t = s[i];
+    const R = t <= 0.5 ? B - (1 - 2 * t) * B * (1 - B) : B + (2 * t - 1) * ((B <= 0.25 ? ((16 * B - 12) * B + 4) * B : Math.sqrt(B)) - B);
+    b[i] = Math.pow(Math.min(1, Math.max(0, B + amt * (R - B))), 2.2); }
 }
 function ltShade(nx, ny, nz, out) {   // neutral grey stone: soft ambient, diffuse, a touch of shine
   const L = ltLightVec(), l = Math.hypot(...L), lx = L[0] / l, ly = L[1] / l, lz = L[2] / l, hl = Math.hypot(lx, ly, lz + 1), hx = lx / hl, hy = ly / hl, hz = (lz + 1) / hl;
@@ -1376,6 +1500,85 @@ function draw2D(g, v) {   // the grid unrolled flat, top at the top (as Relief F
     im.data[o] = r; im.data[o + 1] = gg; im.data[o + 2] = bl; im.data[o + 3] = 255; }
   vctx.putImageData(im, 0, 0);
 }
+// ---------- Mask view and hand paint ----------
+const PT = { mode: null, down: false, last: null, raf: 0, undo: [], dirty: null, target: 1 };
+function resetMask() { S.key = null; S.paint = null; S.mkCache = null; PT.undo = []; PT.mode = null; S.picking = false; if ($('maskSrc').value === 'key' || $('maskSrc').value === 'paint') $('maskSrc').value = 'auto'; $('keyTol').value = 50; }
+function maskShown() {   // coverage drawn in the Mask view (whether or not Background uses it)
+  const kind = maskKind(); if (kind === 'none' && !S.paint) return null;
+  const A0 = maskBase(kind), N = S.W * S.H, P = S.paint && S.paint.length === N ? S.paint : null, M = new Float32Array(N);
+  for (let i = 0; i < N; i++) M[i] = (P ? painted(A0[i], P[i]) : A0[i]) > 0.02 ? 1 : 0;
+  const s = num('mkSoft', 0); return s > 0.05 ? Core.blur(M, S.W, S.H, s) : M;
+}
+const mpx = (d, i, a) => { const k = 0.32 * (1 - a), r = d[i] * (a + k) + 205 * (1 - a - k), g = d[i + 1] * (a + k) + 52 * (1 - a - k), b = d[i + 2] * (a + k) + 44 * (1 - a - k); return [r, g, b]; };
+function drawMask() {
+  if (!S.work) return; const W = S.W, H = S.H, d = S.work, M = maskShown();
+  view.width = W; view.height = H; const im = new ImageData(W, H), o = im.data;
+  for (let i = 0; i < W * H; i++) { const a = M ? M[i] : 1, [r, g, b] = mpx(d, i * 4, a); o[i * 4] = r; o[i * 4 + 1] = g; o[i * 4 + 2] = b; o[i * 4 + 3] = 255; }
+  vctx.putImageData(im, 0, 0); S.mvim = im;
+}
+function paintFrame() {   // repaint only the brushed rectangle during a stroke (hard edge; the full redraw after the stroke adds the softness)
+  const r = PT.dirty; PT.dirty = null; if (!r || S.view !== 'mask' || !S.mvim || S.mvim.width !== S.W) { drawMask(); return; }
+  const W = S.W, d = S.work, A0 = maskBase(maskKind()), P = S.paint, o = S.mvim.data;
+  for (let y = r[1]; y <= r[3]; y++) for (let x = r[0]; x <= r[2]; x++) { const i = y * W + x, a = painted(A0[i], P[i]) > 0.02 ? 1 : 0, [rr, g, b] = mpx(d, i * 4, a); o[i * 4] = rr; o[i * 4 + 1] = g; o[i * 4 + 2] = b; }
+  vctx.putImageData(S.mvim, 0, 0, r[0], r[1], r[2] - r[0] + 1, r[3] - r[1] + 1);
+}
+function viewXY(e) {   // pointer → working-size pixel (the canvas is drawn with object-fit: contain)
+  const r = view.getBoundingClientRect(), k = Math.min(r.width / view.width, r.height / view.height) || 1, ox = r.left + (r.width - view.width * k) / 2, oy = r.top + (r.height - view.height * k) / 2;
+  return [(e.clientX - ox) / k * S.W / view.width, (e.clientY - oy) / k * S.H / view.height, k * view.width / S.W];
+}
+const paintRadius = () => Math.max(1, num('pSize', 2) / 100 * Math.max(S.W, S.H) / 2);
+function paintUI() {
+  $('pKeep').classList.toggle('on', PT.mode === 'keep'); $('pRemove').classList.toggle('on', PT.mode === 'remove');
+  $('pUndo').disabled = !PT.undo.length; $('pClear').disabled = !S.paint;
+  $('stage').classList.toggle('painting', !!PT.mode && S.view === 'mask'); $('stage').classList.toggle('picking', !!S.picking);
+  if (!PT.mode || S.view !== 'mask') $('brush').hidden = true;
+}
+function useMask() { if ($('ltBg').value === 'keep') { $('ltBg').value = 'dark'; S.ltB = null; } }   // picking or painting a mask means you want the background separated
+function setPaintMode(m) {
+  if (m && !S.work) { setStatus('maskInfo', 'Open a picture first.', 'err'); return; }
+  PT.mode = PT.mode === m ? null : m; if (PT.mode) { S.picking = false; useMask(); maskNote(); if (S.view !== 'mask') setView('mask'); }
+  paintUI();
+}
+function stamp(cx, cy, target) {
+  const W = S.W, H = S.H, R = paintRadius(), soft = $('pSoft').checked, P = S.paint;
+  const x0 = Math.max(0, Math.floor(cx - R - 1)), x1 = Math.min(W - 1, Math.ceil(cx + R + 1)), y0 = Math.max(0, Math.floor(cy - R - 1)), y1 = Math.min(H - 1, Math.ceil(cy + R + 1));
+  if (x0 > x1 || y0 > y1) return;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const dd = Math.hypot(x + 0.5 - cx, y + 0.5 - cy); if (dd > R + 1) continue;
+    let f; if (soft) { const t = Math.min(1, Math.max(0, (R - dd) / (R * 0.6))); f = t * t * (3 - 2 * t); } else f = Math.min(1, Math.max(0, R + 0.5 - dd));
+    if (f > 0) { const i = y * W + x; P[i] += (target - P[i]) * f; } }
+  const r = PT.dirty; if (!r) PT.dirty = [x0, y0, x1, y1]; else { r[0] = Math.min(r[0], x0); r[1] = Math.min(r[1], y0); r[2] = Math.max(r[2], x1); r[3] = Math.max(r[3], y1); }
+}
+function strokeTo(x, y) {
+  const R = paintRadius(), [lx, ly] = PT.last || [x, y], n = Math.max(1, Math.ceil(Math.hypot(x - lx, y - ly) / Math.max(1, R * 0.25)));
+  for (let k = 1; k <= n; k++) stamp(lx + (x - lx) * k / n, ly + (y - ly) * k / n, PT.target);
+  PT.last = [x, y]; if (!PT.raf) PT.raf = requestAnimationFrame(() => { PT.raf = 0; paintFrame(); });
+}
+function moveBrush(e) {
+  if (!PT.mode || S.view !== 'mask' || !S.W) { $('brush').hidden = true; return; }
+  const r = view.getBoundingClientRect(), inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom, b = $('brush');
+  b.hidden = !inside; if (!inside) return; const [, , k] = viewXY(e), dpx = paintRadius() * 2 * k;
+  b.style.width = b.style.height = dpx + 'px'; b.style.left = e.clientX + 'px'; b.style.top = e.clientY + 'px'; b.classList.toggle('rm', (PT.mode === 'remove') !== e.shiftKey);
+}
+view.addEventListener('pointerdown', e => {
+  if (S.picking && S.work && (S.view === 'input' || S.view === 'mask')) {   // Pick colour: average a 5×5 patch of the working picture
+    const [fx, fy] = viewXY(e), x = Math.floor(fx), y = Math.floor(fy); if (x < 0 || y < 0 || x >= S.W || y >= S.H) return;
+    const c = [0, 0, 0]; let n = 0;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const X = Math.min(S.W - 1, Math.max(0, x + dx)), Y = Math.min(S.H - 1, Math.max(0, y + dy)), i = (Y * S.W + X) * 4; c[0] += S.work[i]; c[1] += S.work[i + 1]; c[2] += S.work[i + 2]; n++; }
+    S.picking = false; buildKey(c.map(v => Math.round(v / n)), S.keyAuto ? Math.min(S.keyAuto.sd, 12) : 3, false);
+    $('maskSrc').value = 'key'; $('keyTol').value = 50; useMask(); maskChanged(); keepSoon(); setView('mask'); return;
+  }
+  if (!PT.mode || S.view !== 'mask' || !S.W || e.button !== 0) return;
+  e.preventDefault(); view.setPointerCapture(e.pointerId);
+  if (!S.paint || S.paint.length !== S.W * S.H) S.paint = new Float32Array(S.W * S.H);
+  PT.undo.push(Float32Array.from(S.paint)); if (PT.undo.length > 25) PT.undo.shift();
+  PT.down = true; PT.last = null; PT.target = ((PT.mode === 'keep') !== e.shiftKey) ? 1 : -1;
+  const [x, y] = viewXY(e); strokeTo(x, y); paintUI();
+});
+view.addEventListener('pointermove', e => { moveBrush(e); if (!PT.down) return; const [x, y] = viewXY(e); strokeTo(x, y); });
+{ const end = () => { if (!PT.down) return; PT.down = false; PT.last = null; if (S.paint && !S.paint.some(v => v !== 0)) S.paint = null; maskChanged(); paintUI(); };
+  view.addEventListener('pointerup', end); view.addEventListener('pointercancel', end); }
+view.addEventListener('pointerleave', () => { if (!PT.down) $('brush').hidden = true; });
 function cellNear(g, i, j) { const cu = g.nu - 1, cv = g.nv - 1, C = g.cellIn; for (const [a, b] of [[i, j], [i - 1, j], [i, j - 1], [i - 1, j - 1]]) if (a >= 0 && b >= 0 && a < cu && b < cv && C[b * cu + a]) return true; return false; }
 function ltBlurGrid(a, W, H, s, wrap) {   // small separable gaussian on a plate grid (wraps round closed shapes)
   if (s < 0.3) return a; const r = Math.ceil(s * 2.5), k = []; for (let i = -r; i <= r; i++) k.push(Math.exp(-i * i / (2 * s * s)));
@@ -1456,7 +1659,7 @@ async function refresh0() {
   updateButtons(); updateFields();
   if (!S.img) { showCanvas(false); return; }
   const v = S.view;
-  if (v === 'input' || v === 'normal') { showCanvas(true); v === 'input' ? drawInput() : drawNormals(); $('info').textContent = `${S.imgName} · ${S.img.naturalWidth}×${S.img.naturalHeight} · working ${S.W}×${S.H}`; updateDims(); return; }
+  if (v === 'input' || v === 'normal' || v === 'mask') { showCanvas(true); v === 'input' ? drawInput() : v === 'mask' ? drawMask() : drawNormals(); paintUI(); $('info').textContent = `${S.imgName} · ${S.img.naturalWidth}×${S.img.naturalHeight} · working ${S.W}×${S.H}`; updateDims(); return; }
   if (!haveSource()) { showCanvas(true); drawInput(); $('info').textContent = 'No normals yet: make them, open a .relief project, or switch to Photo (classic).'; return; }
   try {
     $('info').textContent = 'Baking…'; await tick();
@@ -1542,7 +1745,7 @@ function updateButtons() {
   updateGuide();
   $('btnRun').disabled = !S.normalSess || !S.img || S.busy;
   const has = !!S.img, src = has && haveSource();
-  for (const b of document.querySelectorAll('.tab')) b.disabled = b.dataset.v === 'input' ? false : b.dataset.v === 'normal' ? !(has && S.mode === 'relit' && activeNormal()) : !src;
+  for (const b of document.querySelectorAll('.tab')) b.disabled = b.dataset.v === 'input' ? false : b.dataset.v === 'mask' ? !has : b.dataset.v === 'normal' ? !(has && S.mode === 'relit' && activeNormal()) : !src;
   $('btnSave').disabled = !src || S.busy;
   const n = rawNormal(); $('nrmPill').textContent = n ? (n === S.upNormal ? 'uploaded map' : S.nrmFrom === 'project' ? 'from project' : 'made') : 'none'; $('nrmPill').className = 'pill' + (n ? ' ok' : '');
 }
@@ -1565,6 +1768,11 @@ function updateFields() {
   for (const el of document.querySelectorAll('[data-b]')) el.hidden = !bk || !el.dataset.b.split(' ').includes(bk);
   $('baseLead').textContent = bk === 'flat' ? 'A foot with a slot the plate stands in. Put a light behind it.' : bk === 'globe' ? 'A round stand the globe sits on, with a ring that locates in its hole and a pocket for an LED puck or tea light.' : bk === 'shade' ? 'A base the shade drops into, with a pocket for an LED puck or tea light and a cable hole. Print it in any colour.' : '';
   $('basePill').hidden = !bk;
+  { const sl = $('ltSL').value, mk = ['auto', 'key'].includes($('maskSrc').value) ? 'key' : $('maskSrc').value;
+    for (const el of document.querySelectorAll('[data-sl]')) el.hidden = !el.dataset.sl.split(' ').includes(sl);
+    for (const el of document.querySelectorAll('[data-mk]')) el.hidden = !el.dataset.mk.split(' ').includes(mk);
+    $('ltSLAmtV').textContent = $('ltSLAmt').value + '%'; $('ltSLRadV').textContent = $('ltSLRad').value + ' px'; $('keyTolV').textContent = $('keyTol').value;
+    $('mkSoftV').textContent = $('mkSoft').value + ' px'; $('pSizeV').textContent = (+$('pSize').value).toFixed(1) + '%'; }
   const ph = S.mode === 'photo'; $('lightCard').hidden = ph; $('nrmCard').hidden = ph; $('nrmHint').hidden = !ph;
   $('stepLightLab').textContent = ph ? 'Tone' : 'Light'; $('gstepLightLab').textContent = ph ? 'Tone' : 'Light';
   $('printTip').textContent = FLATLIKE.has(sh) ? 'Print upright in white PLA, 100% infill, 0.1–0.12 mm layers. View it from the textured side with a light behind.'
@@ -1583,12 +1791,13 @@ function setShape(s) { S.shape = s; shapeBtns(); setTimeout(keepSave, 0); $('sha
 const CAPS = {
   input: '<b>Picture</b> · the picture you opened.',
   normal: '<b>Normals</b> · which way each bit of the surface faces, from the AI. The colours are directions, not the final look.',
+  mask: '<b>Mask</b> · the subject in full colour, the background tinted red. Paint with Keep / Remove (Light step, Background mask) to fix it.',
   '3d': '<b>3D</b> · the print with a light behind it. Drag to spin, scroll to zoom. Light settings are under the view.',
   lit: '<b>Backlit</b> · how it looks with a light behind it, laid out flat (shades are shown opened out). Drag to move the picture, scroll to zoom it.',
   render: '<b>Baked picture</b> · the lit carving before it becomes plastic: the picture the thickness is made from. Drag to move the picture, scroll to zoom it.',
   thick: '<b>Thickness</b> · how thick the plastic is. Light grey = thin (glows), dark = thick (blocks light); frames and rims are darkest. Large dark patches won\'t glow.',
 };
-function setView(v) { S.view = v; for (const b of document.querySelectorAll('.tab')) b.classList.toggle('on', b.dataset.v === v); $('vcap').innerHTML = S.img ? CAPS[v] || '' : ''; refresh(); }
+function setView(v) { S.view = v; for (const b of document.querySelectorAll('.tab')) b.classList.toggle('on', b.dataset.v === v); $('vcap').innerHTML = S.img ? CAPS[v] || '' : ''; paintUI(); refresh(); }
 function goStep(name) { S.step = name; for (const b of document.querySelectorAll('.step')) b.classList.toggle('on', b.dataset.step === name); for (const p of document.querySelectorAll('.pane')) p.hidden = p.dataset.pane !== name; updateGuide(); }
 for (const id of ['gNow', 'gNowBig']) $(id).addEventListener('click', e => { const a = e.target.closest('[data-act]'); if (!a) return;
   if (a.dataset.act === 'photo') setMode('photo'); else if (a.dataset.act === 'load') { goStep('pic'); loadNormalModel(); $('nrmCard').scrollIntoView({ behavior: 'smooth' }); } });
@@ -1630,6 +1839,26 @@ for (const id of ['nrmConv', 'upFlipX']) $(id).onchange = () => { prepUploadNorm
 for (const id of ['gridNrm', 'edgeNrm', 'edgeAmt']) $(id).onchange = normalsChanged;
 $('workRes').onchange = () => { if (S.img) { setupWorking(); normalsChanged(); } };
 $('ltBg').addEventListener('change', maskNote);
+// soft light
+$('ltSL').addEventListener('change', () => { S.ltB = null; updateFields(); schedule(60); });
+for (const id of ['ltSLAmt', 'ltSLRad']) $(id).addEventListener('input', () => { S.ltB = null; updateFields(); schedule(150); });
+// background mask
+$('maskSrc').addEventListener('change', () => { if ($('maskSrc').value !== 'off') useMask(); maskChanged(); });
+$('keyTol').addEventListener('input', () => { updateFields(); clearTimeout(S.mkT); S.mkT = setTimeout(maskChanged, 90); });
+$('mkSpecks').addEventListener('change', maskChanged);
+$('mkSoft').addEventListener('input', () => { updateFields(); clearTimeout(S.mkT); S.mkT = setTimeout(maskChanged, 120); });
+$('btnPick').onclick = () => { if (!S.work) { setStatus('maskInfo', 'Open a picture first.', 'err'); return; }
+  S.picking = !S.picking; PT.mode = null; if (S.picking) { if (S.view !== 'input' && S.view !== 'mask') setView('input'); setStatus('maskInfo', 'Click the background in the picture…'); } else maskNote(); paintUI(); };
+$('pKeep').onclick = () => setPaintMode('keep'); $('pRemove').onclick = () => setPaintMode('remove');
+$('pSize').addEventListener('input', updateFields);
+$('pUndo').onclick = () => { if (!PT.undo.length) return; const u = PT.undo.pop(); S.paint = u.some(v => v !== 0) ? u : null; maskChanged(); paintUI(); };
+$('pClear').onclick = () => { if (!S.paint) return; PT.undo.push(S.paint); S.paint = null; maskChanged(); paintUI(); };
+document.addEventListener('keydown', e => {
+  const ae = document.activeElement; if (ae && /INPUT|SELECT|TEXTAREA/.test(ae.tagName) && ae.type !== 'range' && ae.type !== 'checkbox') return;
+  if (e.key === 'Escape' && (PT.mode || S.picking)) { PT.mode = null; S.picking = false; maskNote(); paintUI(); }
+  else if (PT.mode && (e.key === '[' || e.key === ']')) { const el = $('pSize'); el.value = Math.min(12, Math.max(0.3, +el.value * (e.key === ']' ? 1.2 : 1 / 1.2))); updateFields(); keepSoon(); }
+  else if (PT.mode && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); $('pUndo').click(); }
+});
 const bakeIds = ['ltAz', 'ltEl', 'ltTone', 'ltBg', 'ltSoft', 'ltGamma', 'ltInv', 'ltCon', 'ltBri'];
 for (const id of bakeIds) $(id).addEventListener(['ltAz', 'ltEl', 'ltTone', 'ltGamma', 'ltCon', 'ltBri'].includes(id) ? 'input' : 'change', () => { S.ltB = null; $('ltConV').textContent = $('ltCon').value + '%'; $('ltBriV').textContent = (+$('ltBri').value > 0 ? '+' : '') + $('ltBri').value;
   $('ltAzV').textContent = $('ltAz').value + '°'; $('ltElV').textContent = $('ltEl').value + '°'; $('ltToneV').textContent = $('ltTone').value + '%'; $('ltGammaV').textContent = (+$('ltGamma').value).toFixed(2); schedule(150); });
