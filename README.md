@@ -10,8 +10,8 @@ From the maker of [Relief Forge](https://snazzygaz.github.io/DepthNormal/).
 
 ## Two looks
 
-- **Relit (AI normals):** the picture is rebuilt in 3D and lit by a light you set, so it looks carved, like lit marble. Needs the MoGe-2 normal model (one download), or a `.relief` project from Relief Forge.
-- **Photo (classic):** the picture's own light and dark becomes thickness, like most lithophane makers. No download needed.
+- **Relit (AI normals):** the picture is rebuilt in 3D and lit by a light you set, so it looks carved, like lit marble. Needs the MoGe-2 normal model (one download), or a `.relief` project from Relief Forge. The model choices stay hidden until a picture is open.
+- **Photo (classic):** the picture's own light and dark becomes thickness, like most lithophane makers. No download needed, so it is the quick way to see a lithophane.
 
 ## What it does
 
@@ -27,8 +27,8 @@ From the maker of [Relief Forge](https://snazzygaz.github.io/DepthNormal/).
 
 ## Getting started
 
-1. **Picture:** open a picture, or a `.relief` project from Relief Forge.
-2. **Light:** set the light on the carving, or the photo's contrast (called **Tone** in Photo mode). Each new picture starts as a flat plate, so you can get the look and the heights right first. The last shape you used is not remembered.
+1. **Picture:** open a picture, try the sample picture (a still life included with the page), or open a `.relief` project from Relief Forge. Nothing you open is uploaded.
+2. **Light:** set the light on the carving, or the photo's contrast (called **Tone** in Photo mode). This step opens the **Backlit** view, so you set the look while you watch it. Each new picture starts as a flat plate, so you can get the look and the heights right first. The last shape you used is not remembered.
 3. **Shape:** then put it on a shape and set its size.
 4. **Export:** add fittings or a base, then save the STL.
 

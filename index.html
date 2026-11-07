@@ -112,6 +112,8 @@ main{display:flex;flex-direction:column;min-width:0;min-height:0}
 .empty{color:var(--mute);text-align:center;max-width:680px;line-height:1.6}
 .empty h2{color:var(--ink);font-size:18px;font-weight:600;margin:14px 0 6px}
 .empty p{margin:0}
+#btnSample{margin-top:14px}
+#sampleHelp{margin:8px auto 0;max-width:420px}
 .guide{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0 0;text-align:left}
 .gstep{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:10px 11px;font-size:12px;line-height:1.45;display:flex;flex-direction:column;gap:4px}
 .gstep b{color:var(--ink2);font-weight:600;font-size:12.5px;display:flex;align-items:center;gap:7px}
@@ -151,9 +153,10 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
       <h3>Picture</h3>
       <div class="row"><label class="btn grow" for="fileImg" style="text-align:center">Open picture…</label><input type="file" id="fileImg" accept="image/*">
         <label class="btn" for="fileProj" title="Use the picture and AI normals from a saved Relief Forge project: no model needed.">Open .relief…</label><input type="file" id="fileProj" accept=".relief,.zip"></div>
+      <div class="row"><button id="btnSampleSide" class="grow" title="Loads a picture included with this page, in Photo mode, so you can try the steps without finding one of your own.">Try a sample picture</button></div>
       <div class="status" id="picStatus"></div>
       <div class="sub">How it's made</div>
-      <div class="seg" id="modeSeg"><button data-m="relit" class="on" title="AI normals, lit by a light you set: the subject looks carved, like lit marble.">Relit (AI normals)</button><button data-m="photo" title="Classic lithophane: the photo's own light and dark becomes thickness.">Photo (classic)</button></div>
+      <div class="seg" id="modeSeg"><button data-m="relit" title="AI normals, lit by a light you set: the subject looks carved, like lit marble.">Relit (AI normals)</button><button data-m="photo" class="on" title="Classic lithophane: the photo's own light and dark becomes thickness. No download.">Photo (classic)</button></div>
       <p class="help" id="modeHelp" style="margin-top:7px"></p>
       <div class="kv" style="margin-top:8px">
         <span>Working size</span><select id="workRes"><option value="1024">1024 px</option><option value="1536">1536 px</option><option value="2048" selected>2048 px</option><option value="3072">3072 px</option></select>
@@ -162,7 +165,7 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
       <div class="row" style="margin-top:10px"><button class="mini ghost" id="btnReset" title="Puts every setting back to how it starts. Your settings are otherwise remembered in this browser.">Reset all settings</button></div>
     </div>
 
-    <div class="card" id="nrmCard">
+    <div class="card" id="nrmCard" hidden>
       <h3>AI normals <span class="pill" id="nrmPill">none</span></h3>
       <p class="lead">Which way each bit of the surface faces, worked out by MoGe-2. Only the normal model is needed (no depth model).</p>
       <div class="kv" style="margin-top:8px">
@@ -193,7 +196,7 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
   <div class="pane" data-pane="light" hidden>
     <div class="card" id="lightCard">
       <h3>Light on the carving</h3>
-      <p class="lead">The AI surface is lit by this light, then bright becomes thin and dark becomes thick. Watch the 3D view while you move it. It's easiest on the flat plate: get the look right here, then pick a shape in <b>3 Shape</b>.</p>
+      <p class="lead">The AI surface is lit by this light, then bright becomes thin and dark becomes thick. Watch the <b>Backlit</b> view while you move it (the 3D view is there too). It's easiest on the flat plate: get the look right here, then pick a shape in <b>3 Shape</b>.</p>
       <div class="kv" style="margin-top:8px">
         <span>Light direction</span><span class="sl"><input type="range" id="ltAz" min="0" max="359" step="1" value="323"><span class="v" id="ltAzV">323°</span></span>
         <span>Light height</span><span class="sl"><input type="range" id="ltEl" min="10" max="85" step="1" value="41"><span class="v" id="ltElV">41°</span></span>
@@ -386,15 +389,17 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
       <svg width="96" height="58" viewBox="4 2 120 72" aria-hidden="true"><defs><linearGradient id="rfgb1" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#f4f4f2"/><stop offset="0.55" stop-color="#c9c9c6"/><stop offset="1" stop-color="#8e8f8c"/></linearGradient><mask id="rfmb1" maskUnits="userSpaceOnUse" x="0" y="0" width="130" height="80"><rect width="130" height="80" fill="#fff"/><path d="M8 70 L45 20 L82 70 Z M67 5 L79 20 L67 35 L55 20 Z" stroke="#000" stroke-width="6"/></mask></defs><path class="m3" d="M86 31 L120 70 L52 70 Z" fill="url(#rfgb1)" mask="url(#rfmb1)"/><path class="m1" d="M8 70 L45 20 L82 70 Z" fill="url(#rfgb1)"/><path class="m2" d="M67 5 L79 20 L67 35 L55 20 Z" fill="url(#rfgb1)"/></svg>
       <h2>Turn a picture into a lithophane</h2>
       <p>A thin print that shows the picture when a light shines through it. Make a flat plate, a lampshade, a globe and more.</p>
+      <button id="btnSample" class="act" title="Loads a picture included with this page, in Photo mode, so you can try Tone, Shape and Export now.">Try a sample picture</button>
+      <p class="help" id="sampleHelp">Included with the app, so you can try Tone, Shape and Export now. Nothing is uploaded.</p>
       <div class="guide" id="guide">
-        <div class="gstep" data-g="pic"><b><i>1</i>Picture</b><span>Open a picture, or a .relief project from Relief Forge.</span></div>
+        <div class="gstep" data-g="pic"><b><i>1</i>Picture</b><span>Open a picture, try the sample, or a .relief project from Relief Forge.</span></div>
         <div class="gstep" data-g="light"><b><i>2</i><span id="gstepLightLab">Light</span></b><span>Set the light on the carving, or the photo's contrast, while it's still a flat plate.</span></div>
         <div class="gstep" data-g="shape"><b><i>3</i>Shape</b><span>Then put it on a shape: lampshade, vase, globe… and set its size.</span></div>
         <div class="gstep" data-g="export"><b><i>4</i>Export</b><span>Fittings, a base, and the STL to print.</span></div>
       </div>
       <div class="routes">
         <div data-m="relit"><b>Relit (AI normals)</b> · the picture is rebuilt in 3D and lit by a light you set, so it looks carved, like lit marble. Needs the MoGe-2 normal model (one download), or a .relief project.</div>
-        <div data-m="photo"><b>Photo (classic)</b> · the picture's own light and dark becomes thickness, like most lithophane makers. No model needed.</div>
+        <div data-m="photo"><b>Photo (classic)</b> · no download. The picture's own light and dark becomes thickness, like most lithophane makers. The quick way to see a lithophane.</div>
       </div>
       <div class="gnow" id="gNowBig"></div>
     </div>
@@ -650,7 +655,8 @@ const Core = (() => {
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
-const APP_VERSION = '0.6.2';
+const APP_VERSION = '0.6.3';
+const SAMPLE_URL = 'samples/demo.jpg';   // original still life bundled with the page; nothing is uploaded
 const ORT_DIST = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/';
 const HF = 'https://huggingface.co';
 const NORMAL_MODELS = {
@@ -658,7 +664,7 @@ const NORMAL_MODELS = {
   vitb: { repo: 'Ruicheng/moge-2-vitb-normal-onnx', rev: '2d247a122ada42ce700fe59273cd62e076da1f32' },   // so an upstream update can't change results
   vits: { repo: 'Ruicheng/moge-2-vits-normal-onnx', rev: 'e50ffda41565591092adea54c6ac83d6212e1e23' },
 };
-const S = { mode: 'relit', shape: 'flat', view: 'input', W: 0, H: 0, img: null, imgName: 'lithophane', lum: null, alpha: null,
+const S = { mode: 'photo', shape: 'flat', view: 'input', W: 0, H: 0, img: null, imgName: 'lithophane', lum: null, alpha: null,
   mogeNormal: null, mogeMask: null, upNormal: null, nrmImg: null, normalSess: null, ltB: null, busy: false };
 window.__litho = S;   // for tests
 const setStatus = (el, msg, cls = '') => { const e = $(el); if (!e) return; e.textContent = msg; e.className = 'status ' + cls; };
@@ -889,6 +895,22 @@ function prepUploadNormal() {
   const sx = $('upFlipX').checked ? -1 : 1;
   for (let i = 0; i < N; i++) { nx[i] = sx * (d[i * 4] / 127.5 - 1); const g = d[i * 4 + 1] / 127.5 - 1; ny[i] = dx ? g : -g; nz[i] = d[i * 4 + 2] / 127.5 - 1; }
   S.upNormal = { nx, ny, nz };
+}
+async function loadSample() {   // Photo, so Tone, Shape and Export work straight away, with no model download
+  if (S.sampleBusy) return;
+  S.sampleBusy = true;
+  try {
+    setStatus('picStatus', 'Loading the sample picture…');
+    const r = await fetch(SAMPLE_URL);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const blob = await r.blob();
+    if (S.mode !== 'photo') setMode('photo');
+    const prev = S.img;
+    await onImage(new File([blob], 'sample.jpg', { type: blob.type || 'image/jpeg' }));
+    if (!S.img || S.img === prev) return;
+    setStatus('picStatus', `Sample picture · ${S.img.naturalWidth}×${S.img.naturalHeight} · Photo (classic), so you can go straight on. Switch to Relit for the carved look.`, 'ok');
+  } catch (e) { console.error(e); setStatus('picStatus', 'Could not load the sample picture.', 'err'); }
+  finally { S.sampleBusy = false; }
 }
 async function onImage(file) {
   try { S.img = await loadImg(file); } catch (e) { setStatus('picStatus', 'Could not read that picture.', 'err'); return; }
@@ -1842,7 +1864,10 @@ function updateFields() {
     for (const el of document.querySelectorAll('[data-mk]')) el.hidden = !el.dataset.mk.split(' ').includes(mk);
     $('ltSLAmtV').textContent = $('ltSLAmt').value + '%'; $('ltSLRadV').textContent = $('ltSLRad').value + ' px'; $('keyTolV').textContent = $('keyTol').value;
     $('mkSoftV').textContent = $('mkSoft').value + ' px'; $('pSizeV').textContent = (+$('pSize').value).toFixed(1) + '%'; }
-  const ph = S.mode === 'photo'; $('lightCard').hidden = ph; $('nrmCard').hidden = ph; $('nrmHint').hidden = !ph;
+  const ph = S.mode === 'photo'; $('lightCard').hidden = ph; $('nrmCard').hidden = ph || !S.img; $('nrmHint').hidden = !ph;
+  $('modeHelp').textContent = ph ? 'The picture\'s own light and dark becomes thickness, as in most lithophane makers. No model needed.'
+    : S.img ? 'The AI rebuilds the surface and you choose the light, so even a flat or badly lit picture comes out looking carved. Uses the same bake as Relief Forge.'
+    : 'The carved, lit-marble look. Open a picture and the model choices appear here (one download). Photo (classic) needs none.';
   $('stepLightLab').textContent = ph ? 'Tone' : 'Light'; $('gstepLightLab').textContent = ph ? 'Tone' : 'Light';
   $('printTip').textContent = FLATLIKE.has(sh) ? 'Print upright in white PLA, 100% infill, 0.1–0.12 mm layers. View it from the textured side with a light behind.'
     : sh === 'sphere' ? 'Print on the bottom hole ring in white PLA, 100% infill (or 4+ walls), 0.1–0.12 mm layers; supports may be needed near the top.'
@@ -1851,8 +1876,7 @@ function updateFields() {
     : 'Print standing on its bottom edge in white PLA, 100% infill (or enough walls to fill it), 0.1–0.12 mm layers.';
 }
 function setMode(m) { S.mode = m; updateFields(); setTimeout(keepSave, 0); for (const b of document.querySelectorAll('#modeSeg button')) b.classList.toggle('on', b.dataset.m === m); S.ltB = null;
-  autoShow(); $('modeHelp').textContent = m === 'relit' ? 'The AI rebuilds the surface and you choose the light, so even a flat or badly lit picture comes out looking carved. Uses the same bake as Relief Forge.' : 'The picture\'s own light and dark becomes thickness, as in most lithophane makers. No model needed.';
-  schedule(); }
+  autoShow(); schedule(); }
 function shapeBtns() { const s = S.shape, pv = $('revProf').value; for (const b of document.querySelectorAll('#shapeBtns button')) b.classList.toggle('on', b.dataset.s === s && (!b.dataset.p || b.dataset.p === pv || (pv !== 'vase' && pv !== 'bell' && b.dataset.p === 'vase'))); }
 function setShape(s, stay) { S.shape = s; shapeBtns(); setTimeout(keepSave, 0); $('shapeHelp').textContent = SHAPES[s];
   if (!FLATLIKE.has(s) && s !== 'arc') $('lt3Src').value = 'bulb'; else $('lt3Src').value = 'even';
@@ -1867,19 +1891,27 @@ const CAPS = {
   thick: '<b>Thickness</b> · how thick the plastic is. Light grey = thin (glows), dark = thick (blocks light); frames and rims are darkest. Large dark patches won\'t glow.',
 };
 function setView(v) { S.view = v; for (const b of document.querySelectorAll('.tab')) b.classList.toggle('on', b.dataset.v === v); $('vcap').innerHTML = S.img ? CAPS[v] || '' : ''; paintUI(); refresh(); }
-function goStep(name) { S.step = name; for (const b of document.querySelectorAll('.step')) b.classList.toggle('on', b.dataset.step === name); for (const p of document.querySelectorAll('.pane')) p.hidden = p.dataset.pane !== name; updateGuide(); }
+function goStep(name) {
+  const prev = S.step; S.step = name;
+  for (const b of document.querySelectorAll('.step')) b.classList.toggle('on', b.dataset.step === name);
+  for (const p of document.querySelectorAll('.pane')) p.hidden = p.dataset.pane !== name;
+  updateGuide();
+  // Light/Tone says to watch Backlit. Coming on to Shape from there, show the 3D view the shape step describes.
+  if (name === 'light' && haveSource() && S.view !== 'lit') setView('lit');
+  else if (name === 'shape' && prev === 'light' && haveSource() && S.view === 'lit') setView('3d');
+}
 for (const id of ['gNow', 'gNowBig']) $(id).addEventListener('click', e => { const a = e.target.closest('[data-act]'); if (!a) return;
   if (a.dataset.act === 'photo') setMode('photo'); else if (a.dataset.act === 'load') { goStep('pic'); loadNormalModel(); $('nrmCard').scrollIntoView({ behavior: 'smooth' }); } });
 for (const el of document.querySelectorAll('.routes [data-m]')) el.addEventListener('click', () => setMode(el.dataset.m));
 function updateGuide() {
   const st = S.step || 'pic', src = haveSource(), relit = S.mode === 'relit';
   let now;
-  if (!S.img) now = 'Open a picture (or drop one on the window), or open a <b>.relief</b> project from Relief Forge.';
+  if (!S.img) now = 'Open a picture (or drop one on the window), try a <b>sample picture</b>, or open a <b>.relief</b> project from Relief Forge.';
   else if (S.busy) now = 'Making the normals… the 3D view opens when they\'re done.';
   else if (!src) now = S.normalSess ? 'Press <b>Make normals</b> (below), or <button class="mini act" data-act="photo">Use Photo (classic)</button>'
     : 'Choose how to make it: <button class="mini act" data-act="photo">Photo (classic) · no download</button> <button class="mini act" data-act="load">Relit · load the AI model (once)</button>';
   else if (st === 'pic') now = `Ready. Go to <b>2 ${relit ? 'Light' : 'Tone'}</b> to set the look while it's still a flat plate.`;
-  else if (st === 'light') now = (relit ? 'Move the light to change how the carving reads.' : 'Adjust contrast and brightness while you watch the <b>Backlit</b> view.') + ' Then <b>3 Shape</b> to put it on a shape.';
+  else if (st === 'light') now = (relit ? 'Move the light to change how the carving reads, while you watch the <b>Backlit</b> view.' : 'Adjust contrast and brightness while you watch the <b>Backlit</b> view.') + ' Then <b>3 Shape</b> to put it on a shape.';
   else if (st === 'shape') now = 'Pick a shape and set its size. The 3D view updates as you go. Then <b>4 Export</b>.';
   else now = 'Check the sizes, add fittings or a base if you want, then <b>Save STL</b>.';
   $('gNow').innerHTML = '<b>Now:</b> ' + now; $('gNowBig').innerHTML = '<b>Now:</b> ' + now;
@@ -1887,7 +1919,7 @@ function updateGuide() {
   for (const c of document.querySelectorAll('.routes [data-m]')) c.classList.toggle('on', c.dataset.m === S.mode);
 }
 function normalsChanged() { S.gcCache = S.eaCache = null; S.ltB = null; maskNote(); updateButtons(); autoShow(); schedule(10); }
-function autoShow() { if (S.img && !S.autoShown && haveSource()) { S.autoShown = true; setView('3d'); } }
+function autoShow() { if (S.img && !S.autoShown && haveSource()) { S.autoShown = true; setView(S.step === 'light' ? 'lit' : '3d'); } }
 function fitHeight() {   // height that shows the picture without cropping
   if (!S.img) return; const g = spec(400); if (!g.pic) return; const p = g.pic, w = (p.span && p.span < p.u1 - p.u0 ? p.span : p.u1 - p.u0) / (p.fit === 'repeat' ? p.rep : 1), hp = w * S.H / S.W;
   let H = hp + (g.rimT || 0) + (g.rimB || 0); if (g.slant) H = H * (g.Hz / g.slant);
@@ -1898,6 +1930,7 @@ for (const b of document.querySelectorAll('.tab')) b.onclick = () => setView(b.d
 for (const b of document.querySelectorAll('#modeSeg button')) b.onclick = () => setMode(b.dataset.m);
 for (const b of document.querySelectorAll('#shapeBtns button')) b.onclick = () => { if (b.dataset.p) $('revProf').value = b.dataset.p; setShape(b.dataset.s); };
 $('fileImg').onchange = e => { const f = e.target.files[0]; if (f) onImage(f); e.target.value = ''; };
+$('btnSample').onclick = loadSample; $('btnSampleSide').onclick = loadSample;
 $('fileProj').onchange = e => { const f = e.target.files[0]; if (f) openProject(f); e.target.value = ''; };
 $('fileNormalModel').onchange = e => { if (e.target.files.length) loadNormalLocal(e.target.files); e.target.value = ''; };
 $('btnLoadNormal').onclick = loadNormalModel;
@@ -1968,9 +2001,9 @@ function keepLoad() { try { const o = JSON.parse(localStorage.getItem(KEEP_KEY) 
 let keepT = 0; const keepSoon = () => { clearTimeout(keepT); keepT = setTimeout(keepSave, 400); };
 document.querySelector('.side').addEventListener('change', keepSoon); document.querySelector('.side').addEventListener('input', keepSoon); $('foot3d').addEventListener('input', keepSoon); $('foot3d').addEventListener('change', () => setTimeout(keepSave, 0));
 $('btnReset').onclick = () => { for (const e of keepEls()) if (e.id in DEFAULTS) { if (e.type === 'checkbox') e.checked = DEFAULTS[e.id]; else e.value = DEFAULTS[e.id]; }
-  try { localStorage.removeItem(KEEP_KEY); } catch {} for (const id of ['ltTmin', 'ltTmax']) $(id).dispatchEvent(new Event('change')); S.ltB = null; setMode('relit'); setShape('flat'); lt3dUniforms(); T3.framedFor = null; schedule(10); };
+  try { localStorage.removeItem(KEEP_KEY); } catch {} for (const id of ['ltTmin', 'ltTmax']) $(id).dispatchEvent(new Event('change')); S.ltB = null; setMode('photo'); setShape('flat'); lt3dUniforms(); T3.framedFor = null; schedule(10); };
 const kept = keepLoad();
-S.step = 'pic'; setMode(kept && kept.mode === 'photo' ? 'photo' : 'relit'); setShape('flat'); goStep('pic');   // always start flat; last shape is not restored
+S.step = 'pic'; setMode(kept && kept.mode === 'relit' ? 'relit' : 'photo'); setShape('flat'); goStep('pic');   // Photo until you choose Relit; always start flat; last shape is not restored
 $('ltAzV').textContent = $('ltAz').value + '°'; $('ltElV').textContent = $('ltEl').value + '°'; $('ltToneV').textContent = $('ltTone').value + '%'; $('ltGammaV').textContent = (+$('ltGamma').value).toFixed(2); $('bulbHV').textContent = $('bulbH').value + '%';
 $('ltConV').textContent = $('ltCon').value + '%'; $('ltBriV').textContent = (+$('ltBri').value > 0 ? '+' : '') + $('ltBri').value; lt3dUniforms(); updateFields(); updateButtons(); showCanvas(false);
 if (navigator.gpu) navigator.gpu.requestAdapter().then(a => { if (!a) setStatus('statNormal', 'No WebGPU graphics in this browser: the model would run on the processor (slow). Use Chrome or Edge.', 'err'); });
