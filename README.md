@@ -28,11 +28,28 @@ From the maker of [Relief Forge](https://snazzygaz.github.io/DepthNormal/).
 ## Getting started
 
 1. **Picture:** open a picture, or a `.relief` project from Relief Forge.
-2. **Shape:** pick a shape and its size.
-3. **Light:** set the light on the carving, or the photo's contrast.
+2. **Light:** set the light on the carving, or the photo's contrast (called **Tone** in Photo mode). It starts as a flat plate, so you can get the look and the heights right first.
+3. **Shape:** then put it on a shape and set its size.
 4. **Export:** add fittings or a base, then save the STL.
 
-**Printing:** white PLA, 100% infill, 0.1–0.12 mm layers. View from the textured side with a light behind.
+**Printing:** white PLA, 100% infill, 0.1–0.12 mm layers. View from the textured side with a light behind. For lamps, use an LED bulb, LED puck or LED tea light, never a flame.
+
+## Print checks
+
+Before saving, the Export step checks the settings for geometry that can't print properly, and says why:
+
+- **Won't save:** a textured inside thicker than the shape is wide (a narrow vase neck, a small globe), a curve tighter than the wall is thick, rims or frames that leave no room for the picture, or a floor and top ring taller than the shade.
+- **Warnings:** a fitting hole made smaller so the floor or ring still reaches the wall (the size shown is the size that's saved), a floor thicker than its rim, and settings that were raised to their minimum.
+
+Floors, rings and a base's feet are saved as separate closed pieces that overlap the wall, not one merged solid. Slicers usually join overlapping pieces when they slice; if yours shows them as separate objects, merge them before printing.
+
+To run the geometry checks yourself (needs [Node.js](https://nodejs.org) 18 or newer, nothing to install):
+
+```
+node scripts/check-geometry.mjs
+```
+
+It runs the app's own code without a browser, builds every shape with a range of fittings, checks each mesh is closed with no bad numbers, and checks that impossible settings are caught.
 
 ## What you need
 

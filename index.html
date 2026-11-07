@@ -86,6 +86,7 @@ progress{width:100%;height:6px;accent-color:var(--acc)}
 .dims .dv{color:var(--ink);font:500 12.5px var(--mono)}
 .dims .dv small{display:block;font:11px Manrope,system-ui,sans-serif;color:var(--mute);margin-top:1px}
 .dims .dwarn{grid-column:1/-1;font-size:11.5px;color:var(--acc2);border-top:1px solid var(--line);padding-top:7px}
+.dims .derr{color:var(--err)}
 main{display:flex;flex-direction:column;min-width:0;min-height:0}
 .viewbar{display:flex;gap:6px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .tab{padding:5px 10px;font-size:12px;border-radius:6px;background:transparent;border-color:transparent;color:var(--mute)}
@@ -137,8 +138,8 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
   </div>
   <nav class="steps">
     <button class="step on" data-step="pic"><span class="n">1</span>Picture</button>
-    <button class="step" data-step="shape"><span class="n">2</span>Shape</button>
-    <button class="step" data-step="light"><span class="n">3</span><span id="stepLightLab">Light</span></button>
+    <button class="step" data-step="light"><span class="n">2</span><span id="stepLightLab">Light</span></button>
+    <button class="step" data-step="shape"><span class="n">3</span>Shape</button>
     <button class="step" data-step="export"><span class="n">4</span>Export</button>
   </nav>
   <div class="gbar" id="gNow"></div>
@@ -188,7 +189,60 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
     </div>
   </div>
 
-  <!-- ============ 2 SHAPE ============ -->
+  <!-- ============ 2 LIGHT ============ -->
+  <div class="pane" data-pane="light" hidden>
+    <div class="card" id="lightCard">
+      <h3>Light on the carving</h3>
+      <p class="lead">The AI surface is lit by this light, then bright becomes thin and dark becomes thick. Watch the 3D view while you move it. It's easiest on the flat plate: get the look right here, then pick a shape in <b>3 Shape</b>.</p>
+      <div class="kv" style="margin-top:8px">
+        <span>Light direction</span><span class="sl"><input type="range" id="ltAz" min="0" max="359" step="1" value="323"><span class="v" id="ltAzV">323°</span></span>
+        <span>Light height</span><span class="sl"><input type="range" id="ltEl" min="10" max="85" step="1" value="41"><span class="v" id="ltElV">41°</span></span>
+        <span title="Mixes in the photo's own light and dark (its colours and tones) on top of the relit carving. 0 = pure relit, as in Relief Forge.">Photo tone</span><span class="sl"><input type="range" id="ltTone" min="0" max="100" step="1" value="0"><span class="v" id="ltToneV">0%</span></span>
+        <span title="Lays the picture over the lit carving in soft-light mode, like the Photoshop layer mode. Fine detail: only the picture's small light-and-dark texture (hair, engraving, grain), so detail pops and the lighting stays. Whole picture: the picture's own light and dark too, for more punch.">Soft light</span><select id="ltSL"><option value="off" selected>Off</option><option value="detail">Fine detail</option><option value="pic">Whole picture</option></select>
+        <span data-sl="detail pic" title="How strongly the soft-light layer works. 100% = the normal blend; above 100% pushes it further.">Soft light amount</span><span class="sl" data-sl="detail pic"><input type="range" id="ltSLAmt" min="0" max="200" step="1" value="100"><span class="v" id="ltSLAmtV">100%</span></span>
+        <span data-sl="detail" title="Size of the detail that is picked out, in working-size pixels. Small = fine texture; larger = bigger forms too.">Detail size</span><span class="sl" data-sl="detail"><input type="range" id="ltSLRad" min="1" max="24" step="0.5" value="3"><span class="v" id="ltSLRadV">3 px</span></span>
+      </div>
+    </div>
+    <div class="card" id="maskCard">
+      <h3>Background mask <span class="pill" id="maskPill">none</span></h3>
+      <p class="lead">Tells the subject from the background, so <b>Background</b> (in Tone, below) can make it dark or glowing. Check it on the <b>Mask</b> view.</p>
+      <div class="kv" style="margin-top:8px">
+        <span title="Where the mask comes from. Auto uses the picture's transparency, then the AI mask (Relit), then a flat background colour if one was found or picked.">Mask from</span><select id="maskSrc"><option value="auto" selected>Auto</option><option value="alpha">Transparency</option><option value="moge">AI mask (Relit)</option><option value="key">Flat colour</option><option value="paint">Paint only</option></select>
+        <span data-mk="key">Background colour</span><span class="row" data-mk="key" style="margin:0"><button id="btnPick" class="mini" title="Click, then click the background in the picture to set its colour exactly.">Pick colour</button><span id="keySw" class="swatch" hidden></span><span class="help mono" id="keyTxt"></span></span>
+        <span data-mk="key" title="Higher: more counts as background. Lower: more is kept. 50 = set for you from the picture.">Tolerance</span><span class="sl" data-mk="key"><input type="range" id="keyTol" min="0" max="100" step="1" value="50"><span class="v" id="keyTolV">50</span></span>
+        <span title="Small background-coloured spots enclosed by the subject (reflections, noise) stay part of the subject.">Fill specks</span><label class="chk" style="margin:0"><input type="checkbox" id="mkSpecks" checked> small holes in the subject</label>
+        <span title="Softens the edge of the cut-out, so the subject ramps into the background instead of a hard step. 0 = hard edge, as in Relief Forge.">Edge softness</span><span class="sl"><input type="range" id="mkSoft" min="0" max="8" step="0.25" value="0"><span class="v" id="mkSoftV">0 px</span></span>
+      </div>
+      <div class="sub">Paint the mask</div>
+      <div class="seg"><button id="pKeep" title="Paint areas that should be subject">Keep</button><button id="pRemove" title="Paint areas that should be background">Remove</button></div>
+      <div class="kv" style="margin-top:8px"><span>Brush size</span><span class="sl"><input type="range" id="pSize" min="0.3" max="12" step="0.1" value="2"><span class="v" id="pSizeV">2.0%</span></span></div>
+      <div class="row"><label class="chk" style="margin:0"><input type="checkbox" id="pSoft" checked> Soft edge</label><span class="grow"></span><button id="pUndo" class="mini" disabled>Undo</button><button id="pClear" class="mini" disabled>Clear</button></div>
+      <p class="help" id="pInfo" style="margin:7px 0 0">Pick Keep or Remove, then paint on the Mask view. Hold Shift for the opposite, [ and ] change the size, Esc stops.</p>
+      <div class="status" id="maskInfo"></div>
+    </div>
+    <div class="card">
+      <h3>Tone</h3>
+      <div class="kv">
+        <span title="Keep the background as part of the picture, or separate it with the Background mask (above) and make it dark or glowing.">Background</span><select id="ltBg"><option value="keep" selected>Keep it</option><option value="dark">Make it dark (thick)</option><option value="glow">Make it glow (thin)</option></select>
+        <span title="Spreads or squeezes the tones. 100% = as is.">Contrast</span><span class="sl"><input type="range" id="ltCon" min="40" max="200" step="1" value="100"><span class="v" id="ltConV">100%</span></span>
+        <span title="Lighter (thinner) or darker (thicker) overall.">Brightness</span><span class="sl"><input type="range" id="ltBri" min="-40" max="40" step="1" value="0"><span class="v" id="ltBriV">0</span></span>
+        <span title="Lifts the very darkest shadows a little, so they become rounded bumps instead of sudden full-thickness cliffs.">Shadow softness</span><select id="ltSoft"><option value="0">Off</option><option value="0.04">Light</option><option value="0.08" selected>Medium</option><option value="0.15">Strong</option></select>
+        <span title="Below 1 brightens the mid-tones (thinner), above 1 darkens them. 1 = as Relief Forge.">Mid-tones</span><span class="sl"><input type="range" id="ltGamma" min="0.4" max="2.5" step="0.05" value="1"><span class="v" id="ltGammaV">1.00</span></span>
+        <span>Invert</span><label class="chk" style="margin:0"><input type="checkbox" id="ltInv"> bright ↔ dark</label>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Light inside</h3>
+      <label class="chk" title="A bulb lights nearby parts more than far ones, so a shade looks bright near the bulb and dim at the rims. This thins the far parts to even it out."><input type="checkbox" id="bulbOn"> Even out the bulb's light</label>
+      <div class="kv" style="margin-top:8px">
+        <span title="Where the bulb sits, as % of the height (0 = bottom).">Bulb height</span><span class="sl"><input type="range" id="bulbH" min="0" max="100" step="1" value="30"><span class="v" id="bulbHV">30%</span></span>
+        <span data-for="flat arc heart disc" title="Distance from the back of the plate to the bulb.">Bulb distance</span><span class="unit" data-for="flat arc heart disc"><input type="number" id="bulbD" value="40" min="5" max="500" step="5"> mm</span>
+      </div>
+      <p class="help" style="margin-top:7px">To see the bulb's effect, set <b>Light in 3D</b> (under the 3D view) to <b>Bulb</b>, then switch this on and off.</p>
+    </div>
+  </div>
+
+  <!-- ============ 3 SHAPE ============ -->
   <div class="pane" data-pane="shape" hidden>
     <div class="card">
       <h3>Shape</h3>
@@ -258,59 +312,6 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
     </div>
   </div>
 
-  <!-- ============ 3 LIGHT ============ -->
-  <div class="pane" data-pane="light" hidden>
-    <div class="card" id="lightCard">
-      <h3>Light on the carving</h3>
-      <p class="lead">The AI surface is lit by this light, then bright becomes thin and dark becomes thick. Watch the 3D view while you move it.</p>
-      <div class="kv" style="margin-top:8px">
-        <span>Light direction</span><span class="sl"><input type="range" id="ltAz" min="0" max="359" step="1" value="323"><span class="v" id="ltAzV">323°</span></span>
-        <span>Light height</span><span class="sl"><input type="range" id="ltEl" min="10" max="85" step="1" value="41"><span class="v" id="ltElV">41°</span></span>
-        <span title="Mixes in the photo's own light and dark (its colours and tones) on top of the relit carving. 0 = pure relit, as in Relief Forge.">Photo tone</span><span class="sl"><input type="range" id="ltTone" min="0" max="100" step="1" value="0"><span class="v" id="ltToneV">0%</span></span>
-        <span title="Lays the picture over the lit carving in soft-light mode, like the Photoshop layer mode. Fine detail: only the picture's small light-and-dark texture (hair, engraving, grain), so detail pops and the lighting stays. Whole picture: the picture's own light and dark too, for more punch.">Soft light</span><select id="ltSL"><option value="off" selected>Off</option><option value="detail">Fine detail</option><option value="pic">Whole picture</option></select>
-        <span data-sl="detail pic" title="How strongly the soft-light layer works. 100% = the normal blend; above 100% pushes it further.">Soft light amount</span><span class="sl" data-sl="detail pic"><input type="range" id="ltSLAmt" min="0" max="200" step="1" value="100"><span class="v" id="ltSLAmtV">100%</span></span>
-        <span data-sl="detail" title="Size of the detail that is picked out, in working-size pixels. Small = fine texture; larger = bigger forms too.">Detail size</span><span class="sl" data-sl="detail"><input type="range" id="ltSLRad" min="1" max="24" step="0.5" value="3"><span class="v" id="ltSLRadV">3 px</span></span>
-      </div>
-    </div>
-    <div class="card" id="maskCard">
-      <h3>Background mask <span class="pill" id="maskPill">none</span></h3>
-      <p class="lead">Tells the subject from the background, so <b>Background</b> (in Tone, below) can make it dark or glowing. Check it on the <b>Mask</b> view.</p>
-      <div class="kv" style="margin-top:8px">
-        <span title="Where the mask comes from. Auto uses the picture's transparency, then the AI mask (Relit), then a flat background colour if one was found or picked.">Mask from</span><select id="maskSrc"><option value="auto" selected>Auto</option><option value="alpha">Transparency</option><option value="moge">AI mask (Relit)</option><option value="key">Flat colour</option><option value="paint">Paint only</option></select>
-        <span data-mk="key">Background colour</span><span class="row" data-mk="key" style="margin:0"><button id="btnPick" class="mini" title="Click, then click the background in the picture to set its colour exactly.">Pick colour</button><span id="keySw" class="swatch" hidden></span><span class="help mono" id="keyTxt"></span></span>
-        <span data-mk="key" title="Higher: more counts as background. Lower: more is kept. 50 = set for you from the picture.">Tolerance</span><span class="sl" data-mk="key"><input type="range" id="keyTol" min="0" max="100" step="1" value="50"><span class="v" id="keyTolV">50</span></span>
-        <span title="Small background-coloured spots enclosed by the subject (reflections, noise) stay part of the subject.">Fill specks</span><label class="chk" style="margin:0"><input type="checkbox" id="mkSpecks" checked> small holes in the subject</label>
-        <span title="Softens the edge of the cut-out, so the subject ramps into the background instead of a hard step. 0 = hard edge, as in Relief Forge.">Edge softness</span><span class="sl"><input type="range" id="mkSoft" min="0" max="8" step="0.25" value="0"><span class="v" id="mkSoftV">0 px</span></span>
-      </div>
-      <div class="sub">Paint the mask</div>
-      <div class="seg"><button id="pKeep" title="Paint areas that should be subject">Keep</button><button id="pRemove" title="Paint areas that should be background">Remove</button></div>
-      <div class="kv" style="margin-top:8px"><span>Brush size</span><span class="sl"><input type="range" id="pSize" min="0.3" max="12" step="0.1" value="2"><span class="v" id="pSizeV">2.0%</span></span></div>
-      <div class="row"><label class="chk" style="margin:0"><input type="checkbox" id="pSoft" checked> Soft edge</label><span class="grow"></span><button id="pUndo" class="mini" disabled>Undo</button><button id="pClear" class="mini" disabled>Clear</button></div>
-      <p class="help" id="pInfo" style="margin:7px 0 0">Pick Keep or Remove, then paint on the Mask view. Hold Shift for the opposite, [ and ] change the size, Esc stops.</p>
-      <div class="status" id="maskInfo"></div>
-    </div>
-    <div class="card">
-      <h3>Tone</h3>
-      <div class="kv">
-        <span title="Keep the background as part of the picture, or separate it with the Background mask (above) and make it dark or glowing.">Background</span><select id="ltBg"><option value="keep" selected>Keep it</option><option value="dark">Make it dark (thick)</option><option value="glow">Make it glow (thin)</option></select>
-        <span title="Spreads or squeezes the tones. 100% = as is.">Contrast</span><span class="sl"><input type="range" id="ltCon" min="40" max="200" step="1" value="100"><span class="v" id="ltConV">100%</span></span>
-        <span title="Lighter (thinner) or darker (thicker) overall.">Brightness</span><span class="sl"><input type="range" id="ltBri" min="-40" max="40" step="1" value="0"><span class="v" id="ltBriV">0</span></span>
-        <span title="Lifts the very darkest shadows a little, so they become rounded bumps instead of sudden full-thickness cliffs.">Shadow softness</span><select id="ltSoft"><option value="0">Off</option><option value="0.04">Light</option><option value="0.08" selected>Medium</option><option value="0.15">Strong</option></select>
-        <span title="Below 1 brightens the mid-tones (thinner), above 1 darkens them. 1 = as Relief Forge.">Mid-tones</span><span class="sl"><input type="range" id="ltGamma" min="0.4" max="2.5" step="0.05" value="1"><span class="v" id="ltGammaV">1.00</span></span>
-        <span>Invert</span><label class="chk" style="margin:0"><input type="checkbox" id="ltInv"> bright ↔ dark</label>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Light inside</h3>
-      <label class="chk" title="A bulb lights nearby parts more than far ones, so a shade looks bright near the bulb and dim at the rims. This thins the far parts to even it out."><input type="checkbox" id="bulbOn"> Even out the bulb's light</label>
-      <div class="kv" style="margin-top:8px">
-        <span title="Where the bulb sits, as % of the height (0 = bottom).">Bulb height</span><span class="sl"><input type="range" id="bulbH" min="0" max="100" step="1" value="30"><span class="v" id="bulbHV">30%</span></span>
-        <span data-for="flat arc heart disc" title="Distance from the back of the plate to the bulb.">Bulb distance</span><span class="unit" data-for="flat arc heart disc"><input type="number" id="bulbD" value="40" min="5" max="500" step="5"> mm</span>
-      </div>
-      <p class="help" style="margin-top:7px">To see the bulb's effect, set <b>Light in 3D</b> (under the 3D view) to <b>Bulb</b>, then switch this on and off.</p>
-    </div>
-  </div>
-
   <!-- ============ 4 EXPORT ============ -->
   <div class="pane" data-pane="export" hidden>
     <div class="card">
@@ -325,13 +326,14 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
     <div class="card" id="fitCard">
       <h3>Fittings</h3>
       <div class="kv">
-        <span data-for="cyl cone poly rev dome" title="A solid floor across the bottom with a hole for an LED puck, tea light or lamp holder. Leave it open if you make a base.">Bottom</span><select id="botFit" data-for="cyl cone poly rev dome"><option value="open" selected>Open</option><option value="ring">Floor with a hole</option></select>
+        <span data-for="cyl cone poly rev dome" title="A solid floor across the bottom with a hole for an LED puck, LED tea light or lamp holder. Leave it open if you make a base.">Bottom</span><select id="botFit" data-for="cyl cone poly rev dome"><option value="open" selected>Open</option><option value="ring">Floor with a hole</option></select>
         <span data-for="cyl cone poly rev" title="A ring across the top: hangs the shade on a pendant fitting or sits it on a lamp holder.">Top</span><select id="topFit" data-for="cyl cone poly rev"><option value="open" selected>Open</option><option value="ring">Ring with a hole</option></select>
         <span data-for="cyl cone poly rev dome" title="Measure your fitting. Lamp-holder shade rings and LED pucks vary.">Hole Ø</span><span class="unit" data-for="cyl cone poly rev dome"><input type="number" id="holeD" value="40" min="5" max="300" step="0.5"> mm</span>
         <span data-for="cyl cone poly rev dome">Plate thickness</span><span class="unit" data-for="cyl cone poly rev dome"><input type="number" id="plateT" value="2" min="0.8" max="6" step="0.2"> mm</span>
         <span data-for="flat heart disc" title="A hole in the frame for a ribbon or hook.">Hanging hole</span><span class="unit" data-for="flat heart disc"><input type="number" id="hangD" value="0" min="0" max="15" step="0.5"> mm <span class="help">(0 = none)</span></span>
       </div>
       <p class="help" id="fitNone" style="margin:0" hidden>No fittings for this shape.</p>
+      <p class="help" data-for="cyl cone poly rev dome" style="margin:7px 0 0">A floor or ring is saved in the same STL as its own closed piece, overlapping the wall, not merged into one solid. Slicers usually join overlapping pieces when they slice; if yours shows them separately, merge them (or turn on its "merge" option) before printing. The same goes for a base's feet.</p>
     </div>
     <div class="card" id="baseCard">
       <h3>Base / stand <span class="pill" id="basePill">separate print</span></h3>
@@ -339,7 +341,7 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
       <label class="chk"><input type="checkbox" id="baseOn"> Make one</label>
       <div class="kv" id="baseKv" style="margin-top:8px">
         <span data-b="shade globe" title="Height of the base body (without feet).">Base height</span><span class="unit" data-b="shade globe"><input type="number" id="bH" value="18" min="6" max="80" step="1"> mm</span>
-        <span data-b="shade globe" title="Round pocket for the light. Tea lights are about 38 mm across and 15 mm tall; LED pucks vary, so measure yours.">Light pocket Ø</span><span class="unit" data-b="shade globe"><input type="number" id="bPocket" value="40" min="10" max="250" step="0.5"> mm</span>
+        <span data-b="shade globe" title="Round pocket for the light. LED tea lights are about 38 mm across and 15 mm tall; LED pucks vary, so measure yours. Use LED lights only, never a flame.">Light pocket Ø</span><span class="unit" data-b="shade globe"><input type="number" id="bPocket" value="40" min="10" max="250" step="0.5"> mm</span>
         <span data-b="shade globe">Pocket depth</span><span class="unit" data-b="shade globe"><input type="number" id="bPocketD" value="12" min="1" max="70" step="0.5"> mm</span>
         <span data-b="shade" title="How deep the shade's bottom edge sits in the base.">Seat depth</span><span class="unit" data-b="shade"><input type="number" id="bSeat" value="5" min="1" max="30" step="0.5"> mm</span>
         <span data-b="flat">Stand depth</span><span class="unit" data-b="flat"><input type="number" id="sDep" value="30" min="10" max="120" step="1"> mm</span>
@@ -386,8 +388,8 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
       <p>A thin print that shows the picture when a light shines through it. Make a flat plate, a lampshade, a globe and more.</p>
       <div class="guide" id="guide">
         <div class="gstep" data-g="pic"><b><i>1</i>Picture</b><span>Open a picture, or a .relief project from Relief Forge.</span></div>
-        <div class="gstep" data-g="shape"><b><i>2</i>Shape</b><span>Flat plate, lampshade, vase, globe… and its size.</span></div>
-        <div class="gstep" data-g="light"><b><i>3</i><span id="gstepLightLab">Light</span></b><span>Set the light on the carving, or the photo's contrast.</span></div>
+        <div class="gstep" data-g="light"><b><i>2</i><span id="gstepLightLab">Light</span></b><span>Set the light on the carving, or the photo's contrast, while it's still a flat plate.</span></div>
+        <div class="gstep" data-g="shape"><b><i>3</i>Shape</b><span>Then put it on a shape: lampshade, vase, globe… and set its size.</span></div>
         <div class="gstep" data-g="export"><b><i>4</i>Export</b><span>Fittings, a base, and the STL to print.</span></div>
       </div>
       <div class="routes">
@@ -648,7 +650,7 @@ const Core = (() => {
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
-const APP_VERSION = '0.6.0';
+const APP_VERSION = '0.6.1';
 const ORT_DIST = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/';
 const HF = 'https://huggingface.co';
 const NORMAL_MODELS = {
@@ -662,7 +664,7 @@ window.__litho = S;   // for tests
 const setStatus = (el, msg, cls = '') => { const e = $(el); if (!e) return; e.textContent = msg; e.className = 'status ' + cls; };
 const tick = () => new Promise(r => setTimeout(r, 0));
 const loadImg = blob => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('could not decode image')); im.src = URL.createObjectURL(blob); });
-const num = (id, d) => { const v = +$(id).value; return Number.isFinite(v) ? v : d; };
+const num = (id, d) => { const s = $(id).value; if (s === '' || s == null) return d; const v = +s; return Number.isFinite(v) ? v : d; };   // an empty box gets the default; a typed 0 stays 0
 $('appVer').textContent = 'v' + APP_VERSION;
 
 // ---------- model cache: same database and keys as Relief Forge, so a model it downloaded is reused here ----------
@@ -1079,12 +1081,17 @@ function ltShade(nx, ny, nz, out) {   // neutral grey stone: soft ambient, diffu
   for (let i = 0; i < out.length; i++) { const a = nx[i], c = ny[i], z = nz[i], k = Math.hypot(a, c, z) || 1, d = Math.max(0, (a * lx + c * ly + z * lz) / k), s = Math.pow(Math.max(0, (a * hx + c * hy + z * hz) / k), 40);
     out[i] = Math.min(1, 0.12 + 0.88 * d + 0.18 * s); }
 }
-function ltPlate(b, maxCells) {   // thickness grid in mm (row 0 = top of the picture), including the frame
-  const W = S.W, H = S.H, Wmm = Math.max(20, +$('ltW').value || 100), tmin = Math.max(0.3, +$('ltTmin').value || 0.8), tmax = Math.max(tmin + 0.2, +$('ltTmax').value || 3), fr = Math.max(0, +$('ltFrame').value || 0);
+function plateDims(maxCells) {   // the plate's grid size, from the settings alone (no picture needed): shared by ltPlate and fullSize
+  const W = S.W, H = S.H, Wmm = Math.max(20, num('ltW', 100)), tmin = Math.max(0.3, num('ltTmin', 0.8)), tmax = Math.max(tmin + 0.2, num('ltTmax', 3)), fr = Math.max(0, num('ltFrame', 4));
   let res = +$('ltRes').value || 0.15; let nx = Math.round(Wmm / res); if (maxCells && nx > maxCells) { nx = maxCells; res = Wmm / nx; }
-  const pxmm = Wmm / W, sm = Math.max(0, +$('ltSmooth').value || 0), sg = Math.hypot(res / pxmm / 2, sm / 2.355 / pxmm);   // area-average down to the plate grid, plus the smoothing (as a width at half height)
+  const ny = Math.max(2, Math.round(nx * H / W)), F = Math.round(fr / res), gx = nx + 2 * F, gy = ny + 2 * F;
+  return { W, H, Wmm, tmin, tmax, res, nx, ny, F, gx, gy };
+}
+function ltPlate(b, maxCells) {   // thickness grid in mm (row 0 = top of the picture), including the frame
+  const { W, H, Wmm, tmin, tmax, res, nx, ny, F, gx, gy } = plateDims(maxCells);
+  const pxmm = Wmm / W, sm = Math.max(0, num('ltSmooth', 0.4)), sg = Math.hypot(res / pxmm / 2, sm / 2.355 / pxmm);   // area-average down to the plate grid, plus the smoothing (as a width at half height)
   if (sg > 0.3 && b.length === W * H) { const c = S.ltBlur; if (c && c.b === b && Math.abs(c.sg - sg) < 1e-3) b = c.out; else { const o = Core.blur(b, W, H, sg); S.ltBlur = { b, sg, out: o }; b = o; } }
-  const ny = Math.max(2, Math.round(nx * H / W)), F = Math.round(fr / res), gx = nx + 2 * F, gy = ny + 2 * F, T = new Float32Array(gx * gy).fill(tmax + 0.6), lnT = Math.log(LT_TLO);
+  const T = new Float32Array(gx * gy).fill(tmax + 0.6), lnT = Math.log(LT_TLO);
   for (let y = 0; y < ny; y++) { const sy = Math.min(H - 1.001, (y + 0.5) * H / ny - 0.5), y0 = Math.max(0, Math.floor(sy)), fy = Math.max(0, sy - y0);
     for (let x = 0; x < nx; x++) { const sx = Math.min(W - 1.001, (x + 0.5) * W / nx - 0.5), x0 = Math.max(0, Math.floor(sx)), fx = Math.max(0, sx - x0), i = y0 * W + x0;
       const v = (b[i] * (1 - fx) + b[i + 1] * fx) * (1 - fy) + (b[i + W] * (1 - fx) + b[i + W + 1] * fx) * fy;
@@ -1212,7 +1219,61 @@ function spec(maxCells) {
   if (g.wrap) { g.nu = g.cols || Math.max(8, Math.round(g.Umm / g.res)); g.resU = g.Umm / g.nu; }
   else { g.nu = Math.max(2, Math.round(g.Umm / g.res) + 1); g.resU = g.Umm / (g.nu - 1); }
   g.nv = Math.max(2, Math.round(g.Vmm / g.res) + 1); g.resV = g.Vmm / (g.nv - 1);
+  for (const e of g.extras) {   // the hole that will really be cut: same rule as ringMesh, worked out from the surface alone
+    const v = e.top ? g.Vmm : 0, n = g.wrap ? g.nu : g.nu - 1; let rmin = Infinity;
+    for (let i = 0; i < n; i++) { const a = g.at(i * g.resU, v); rmin = Math.min(rmin, Math.hypot(a[0], a[1])); }
+    e.holeUsed = ringHole(e.hole, rmin, g.dir, g.tmax); }
   return g;
+}
+// a floor / ring keeps 2 mm of plate between the hole and the wall's inner face (textured inside: the texture reaches in by up to Thickest)
+const ringHole = (hole, rSmooth, dir, tmax) => Math.min(hole, Math.max(1, rSmooth - (dir < 0 ? tmax : 0) - 2));
+
+// ---------- print checks: settings that would make broken or self-colliding geometry ----------
+// checkGeometry(g) takes spec()'s result and returns { err: [...], warn: [...] } in plain words. err = the STL would be broken
+// (surfaces passing through each other, no picture left); warn = it prints, but not how the settings suggest.
+function wallAt(g, u, v) { const p = g.pic; return p && v >= p.v0 - 1e-6 && v <= p.v1 + 1e-6 && u >= p.u0 - 1e-6 && u <= p.u1 + 1e-6 ? g.tmax : g.TF; }   // thickest the wall can be there
+function foldCheck(g) {   // offsets the smooth side by the thickest wall and looks for anywhere the textured side folds back through itself
+  const d = g.dir, nv = Math.min(1200, Math.max(24, Math.ceil(g.Vmm / 0.5))), cu = g.wrap ? 96 : 48, cv = Math.min(240, nv);
+  const pt = (u, v) => { const a = g.at(u, v), t = wallAt(g, u, v); return [a[0], a[1], a[2], a[0] + d * t * a[3], a[1] + d * t * a[4], a[2] + d * t * a[5]]; };
+  const bad = (A, B) => { const bx = B[0] - A[0], by = B[1] - A[1], bz = B[2] - A[2], bl = bx * bx + by * by + bz * bz; if (bl < 1e-10) return false;
+    return (B[3] - A[3]) * bx + (B[4] - A[4]) * by + (B[5] - A[5]) * bz <= 1e-6 * bl; };
+  let hoop = null, axis = null, curve = null;
+  for (let jj = 0; jj <= cv && !hoop; jj++) { const v = g.Vmm * jj / cv; let prev = pt(0, v);   // round the shape (or across it)
+    if (g.wrap && !axis && Math.hypot(prev[0], prev[1]) > 1e-6 && prev[3] * prev[0] + prev[4] * prev[1] <= 0) axis = prev[2];
+    for (let ii = 1; ii <= cu; ii++) { if (!g.wrap && ii === cu) break; const q = pt(g.Umm * ii / cu, v); if (bad(prev, q)) { hoop = q[2]; break; } prev = q; } }
+  for (let ii = 0; ii < cu && !curve; ii++) { const u = g.Umm * (ii + 0.5) / cu; let prev = pt(u, 0);   // up the shape
+    for (let jj = 1; jj <= nv; jj++) { const q = pt(u, g.Vmm * jj / nv); if (bad(prev, q)) { curve = q[2]; break; } prev = q; } }
+  return { hoop, axis, curve };
+}
+function checkGeometry(g) {
+  const err = [], warn = [], f1 = v => (+v).toFixed(1), sh = g.sh, P = g.pic;
+  const tminIn = num('ltTmin', 0.8), tmaxIn = num('ltTmax', 3);
+  if (tminIn < 0.3) warn.push(`Thinnest ${f1(tminIn)} mm is below the 0.3 mm minimum: 0.3 mm is used.`);
+  if (tmaxIn < g.tmin + 0.2) warn.push(`Thickest has to be at least 0.2 mm more than Thinnest: ${f1(g.tmax)} mm is used.`);
+  const where = z => g.Hz ? ` at about ${f1(Math.max(0, z))} mm up` : '';
+  if (g.at && !g.flat) { const fc = foldCheck(g), inside = g.dir < 0;
+    if (fc.axis != null || fc.hoop != null) err.push(inside
+      ? `The textured inside is thicker (up to ${f1(g.TF)} mm at the rims) than the shape is wide${where(fc.axis != null ? fc.axis : fc.hoop)}: the inside surface would pass through itself. Make it wider, lower Thickest, or put the texture outside.`
+      : `The wall folds through itself${where(fc.hoop)}. Make the shape wider or lower Thickest.`);
+    else if (fc.curve != null) err.push(`The curve${where(fc.curve)} is tighter than the wall is thick (up to ${f1(g.TF)} mm): the textured side would fold through itself. Pick a gentler profile, lower Thickest${inside ? ', or put the texture outside' : ', or put the texture inside'}.`); }
+  if (g.rimT != null && P) { const room = P.v1 - P.v0, rims = (g.rimT || 0) + (g.rimB || 0);
+    if (room <= 1e-6) err.push(`Top and bottom rims (${f1(g.rimT)} + ${f1(g.rimB)} mm) take up the whole ${f1(g.Vmm)} mm surface: there's no room left for the picture. Lower the rims or make it taller.`);
+    else if (rims > 0 && room < Math.max(10, 0.15 * g.Vmm)) warn.push(`Only ${f1(room)} mm of the ${f1(g.Vmm)} mm surface is left for the picture between the rims.`); }
+  if (P && g.Fs > 0 && P.u1 - P.u0 <= 1e-6) err.push(`The ${f1(g.Fs)} mm side frames are wider than the whole part-round shade: there's no room left for the picture. Lower Frame or widen Wrap.`);
+  if (g.inS && sh !== 'flat') { const F = Math.max(0, num('ltFrame', 4)), st = Math.max(0.5, g.Umm / 120), pts = [], edge = [];   // heart / disc: is anything left inside the frame?
+    const nu = Math.ceil(g.Umm / st), nv = Math.ceil(g.boxH / st), ins = (i, j) => i >= 0 && j >= 0 && i <= nu && j <= nv && g.inS(i * st, j * st) && !(g.tab && Math.hypot(i * st - g.tab.cx, j * st - g.tab.cy) <= g.tab.r);
+    for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) if (ins(i, j)) { if (!ins(i - 1, j) || !ins(i + 1, j) || !ins(i, j - 1) || !ins(i, j + 1)) edge.push([i * st, j * st]); else pts.push([i * st, j * st]); }
+    let best = 0; for (const [x, y] of pts) { let m = Infinity; for (const [a, b] of edge) { const dd = (x - a) * (x - a) + (y - b) * (y - b); if (dd < m) m = dd; if (m <= best * best) break; } best = Math.max(best, Math.sqrt(m)); }
+    if (F > 0 && best <= F + 1e-6) err.push(`The ${f1(F)} mm frame fills the whole ${sh === 'disc' ? 'ornament' : 'heart'}: there's no room left for the picture. Lower Frame or make it wider.`);
+    else if (F > 0 && best < F + 5) warn.push(`The frame leaves only a small area for the picture. Lower Frame or make it wider.`); }
+  const rimZ = top => { const r = top ? g.rimT : g.rimB; return r == null ? Infinity : g.slant ? r * g.Hz / g.slant : r; };
+  let ringT = 0;
+  for (const e of g.extras || []) { const nm = e.top ? 'Top ring' : 'Floor'; ringT += e.t;
+    if (e.holeUsed < e.hole - 1e-6) warn.push(e.holeUsed <= 1 + 1e-6 ? `${nm}: the shape is too narrow there for a fitting hole; only a Ø 2 mm pin hole is cut.` : `${nm} hole reduced to Ø ${f1(2 * e.holeUsed)} mm (you asked for Ø ${f1(2 * e.hole)} mm) so the ${e.top ? 'ring' : 'floor'} still reaches the wall. Make the shape wider or check your fitting.`);
+    if (e.t > rimZ(e.top) + 1e-6) warn.push(`${nm} (${f1(e.t)} mm) is thicker than the ${e.top ? 'top' : 'bottom'} rim (${f1(rimZ(e.top))} mm): it covers the ${e.top ? 'top' : 'bottom'} of the picture. Raise the rim or thin the plate.`); }
+  if (g.Hz && ringT >= g.Hz - 1e-6) err.push(`The floor and top ring (${f1(ringT)} mm together) are as tall as the whole ${f1(g.Hz)} mm shade.`);
+  if (sh === 'sphere') { const D = num('cylD', 80); if (num('sphB', 45) >= 0.995 * D) warn.push(`Bottom hole Ø ${f1(num('sphB', 45))} mm is as wide as the globe: it's capped at Ø ${f1(0.995 * D)} mm.`); if (num('sphT', 0) >= 0.995 * D) warn.push(`Top hole Ø ${f1(num('sphT', 0))} mm is as wide as the globe: it's capped at Ø ${f1(0.995 * D)} mm.`); }
+  return { err, warn };
 }
 // brightness sampler over the picture area (local mm, v up), with Relief Forge's area-average + smoothing blur
 function sampler(b, g) {   // brightness 0..1 at any point of the picture area (u, v in mm on the surface, v up)
@@ -1366,9 +1427,9 @@ function buildMesh(g) {
 function ringMesh(g, e) {   // a flat floor / top ring with a round hole, reaching half the thinnest wall into the wall
   const { nu, nv, P, D, dir } = g, j = e.top ? nv - 1 : 0, K = nu, V = new Float32Array(K * 4 * 3), z0 = e.top ? e.z - e.t : e.z, z1 = z0 + e.t;
   let rmin = 1e9;
-  for (let i = 0; i < K; i++) { const k = j * nu + i, x = P[k * 3] + dir * 0.5 * g.tmin * D[k * 3], y = P[k * 3 + 1] + dir * 0.5 * g.tmin * D[k * 3 + 1]; rmin = Math.min(rmin, Math.hypot(P[k * 3], P[k * 3 + 1]) - (dir < 0 ? g.tmax : 0));
+  for (let i = 0; i < K; i++) { const k = j * nu + i, x = P[k * 3] + dir * 0.5 * g.tmin * D[k * 3], y = P[k * 3 + 1] + dir * 0.5 * g.tmin * D[k * 3 + 1]; rmin = Math.min(rmin, Math.hypot(P[k * 3], P[k * 3 + 1]));
     const t = Math.atan2(y, x); V.set([x, y, z0], i * 3); V.set([x, y, z1], (K + i) * 3); }
-  const rh = Math.min(e.hole, Math.max(1, rmin - 2));
+  const rh = ringHole(e.hole, rmin, dir, g.tmax);
   for (let i = 0; i < K; i++) { const k = j * nu + i, t = Math.atan2(P[k * 3 + 1], P[k * 3]); V.set([rh * Math.cos(t), rh * Math.sin(t), z0], (2 * K + i) * 3); V.set([rh * Math.cos(t), rh * Math.sin(t), z1], (3 * K + i) * 3); }
   e.holeUsed = rh;
   const I = []; const tri = (a, b, c, ox, oy, oz) => { const ux = V[b * 3] - V[a * 3], uy = V[b * 3 + 1] - V[a * 3 + 1], uz = V[b * 3 + 2] - V[a * 3 + 2], vx = V[c * 3] - V[a * 3], vy = V[c * 3 + 1] - V[a * 3 + 1], vz = V[c * 3 + 2] - V[a * 3 + 2];
@@ -1586,6 +1647,7 @@ function ltBlurGrid(a, W, H, s, wrap) {   // small separable gaussian on a plate
     for (let j = -r; j <= r; j++) { let xx = hz ? x + j : x; const yy = hz ? y : y + j; if (wrap && hz) xx = (xx + W) % W; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue; s1 += src[yy * W + xx] * k[j + r]; w += k[j + r]; } o[y * W + x] = s1 / w; } return o; };
   return pass(pass(a, true), false);
 }
+const spreadMM = () => Math.max(0, num('lt3Spread', 0.3));   // 0 = no sideways spread (an empty box falls back to 0.3)
 const T3 = {};
 async function show3D(g, parts, base) {
   const box = $('v3d');
@@ -1616,7 +1678,7 @@ async function init3D(box) { { const THREE = await import('three'), { OrbitContr
 }
 function show3Dmesh(g, parts, base) {
   const { THREE } = T3; if (T3.meshes) for (const m of T3.meshes) { T3.scene.remove(m); m.geometry.dispose(); }
-  const n = g.nu * g.nv, thb0 = ltBlurGrid(g.T, g.nu, g.nv, (+$('lt3Spread').value || 0.3) / g.res / 2, g.wrap);
+  const n = g.nu * g.nv, thb0 = ltBlurGrid(g.T, g.nu, g.nv, spreadMM() / g.res / 2, g.wrap);
   T3.meshes = [];
   const { lo, hi } = bbox(parts), c = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]];
   const all = parts.concat(base ? base.parts : []), nL = parts.length;
@@ -1674,7 +1736,7 @@ async function refresh0() {
 }
 let rT = 0; const schedule = (ms = 120) => { clearTimeout(rT); rT = setTimeout(refresh, ms); };
 function fullSize() {   // grid size at export detail, without building it
-  if (S.shape === 'flat' && !(num('hangD', 0) > 0) && !moved()) { const p = ltPlate(new Float32Array(16), 0); return { nu: p.gx, nv: p.gy, tris: 2 * (p.gx - 1) * (p.gy - 1) + 6 * (p.gx + p.gy), Wmm: p.Wmm, Hmm: p.Hmm }; }
+  if (S.shape === 'flat' && !(num('hangD', 0) > 0) && !moved()) { const p = plateDims(0); return { nu: p.gx, nv: p.gy, tris: 2 * (p.gx - 1) * (p.gy - 1) + 6 * (p.gx + p.gy) - 12, Wmm: p.gx * p.res, Hmm: p.gy * p.res }; }
   const g = spec(0), cu = g.wrap ? g.nu : g.nu - 1, tris = 4 * cu * (g.nv - 1) + (g.wrap ? 4 * g.nu : 4 * (cu + g.nv)) + g.extras.length * 8 * g.nu;
   return { nu: g.nu, nv: g.nv, tris, g };
 }
@@ -1688,7 +1750,7 @@ function updateDims(g) {
   if (sh === 'rev' && f.g && f.g.revR) { const r = f.g.revR; R.push(['Diameters', `Ø ${(2 * r[0]).toFixed(0)} · ${(2 * r[1]).toFixed(0)} · ${(2 * r[2]).toFixed(0)} mm`, 'bottom · widest · top (smooth side)']); }
   if (sh === 'cyl' || sh === 'sphere' || sh === 'dome') { const D = num('cylD', 80);
     R.push(inside ? ['Outside', `Ø ${mm(D)} mm`, 'smooth'] : ['Inside', `Ø ${mm(D)} mm`, 'smooth']);
-    R.push(inside ? ['Inside', `down to Ø ${mm(D - 2 * TF)} mm`, 'textured'] : ['Outside', `up to Ø ${mm(D + 2 * TF)} mm`, 'textured']); }
+    R.push(inside ? ['Inside', D - 2 * TF > 0 ? `down to Ø ${mm(D - 2 * TF)} mm` : 'nothing left', 'textured'] : ['Outside', `up to Ø ${mm(D + 2 * TF)} mm`, 'textured']); }
   if (sh === 'cone') R.push(['Diameters', `Ø ${num('coneB', 110)} → ${num('coneT', 70)} mm`, 'bottom → top (smooth side)']);
   if (sh === 'poly') R.push(['Sides', `${Math.round(num('polyN', 6))} × ${(f.g ? f.g.side : 0).toFixed(1)} mm`, `${num('polyW', 90)} mm across flats`]);
   if (f.g && f.g.pic && !fl) { const p = f.g.pic, span = p.span && p.span < p.u1 - p.u0 ? p.span : p.u1 - p.u0, Rh = p.v1 - p.v0, z = Math.max(0.1, num('picZ', 100) / 100);
@@ -1702,14 +1764,20 @@ function updateDims(g) {
     if (wmm > 0) { const ppm = S.img.naturalWidth / wmm, q = ppm >= 8 ? 'sharp' : ppm >= 5 ? 'good' : ppm >= 3 ? 'a bit soft: a bigger picture or a smaller print helps' : 'soft: use a bigger picture or a smaller print';
       R.push(['Picture detail', `${ppm.toFixed(1)} px per mm`, q]); S.ppmLow = ppm < 3; } }
   R.push(['Thickness', `${tmin}–${tmax} mm`, `${fl ? 'frame' : 'rims'} ${TF.toFixed(1)} mm`]);
-  if (f.g && f.g.extras.length) for (const e of f.g.extras) R.push([e.top ? 'Top ring' : 'Floor', `${e.t} mm thick`, `hole Ø ${(2 * (e.holeUsed || e.hole)).toFixed(1)} mm`]);
+  if (f.g && f.g.extras.length) for (const e of f.g.extras) R.push([e.top ? 'Top ring' : 'Floor', `${e.t} mm thick`, `hole Ø ${(2 * e.holeUsed).toFixed(1)} mm${e.holeUsed < e.hole - 1e-6 ? ` (reduced from Ø ${(2 * e.hole).toFixed(1)})` : ''}`]);
+  const ck = [S.shape, S.W, S.H, ...shapeIds.map(id => { const e = $(id); return e.type === 'checkbox' ? e.checked : e.value; })].join('|');   // the checks only depend on these
+  if (!S.geomCheck || S.geomCheck.key !== ck) S.geomCheck = { key: ck, ...checkGeometry(f.g || spec(0)) };
+  const chk = S.geomCheck;
   R.push(['File', `about ${mbs.toFixed(0)} MB`, `${f.nu} × ${f.nv} points at ${$('ltRes').value} mm`]);
   const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   $('dims').innerHTML = R.map(([a, b, c]) => `<span class="dk">${esc(a)}</span><span class="dv">${esc(b)}${c ? `<small>${esc(c)}</small>` : ''}</span>`).join('')
+    + chk.err.map(t => `<span class="dwarn derr"><b>Can't print this:</b> ${esc(t)}</span>`).join('') + chk.warn.map(t => `<span class="dwarn">${esc(t)}</span>`).join('')
     + (mbs > 120 ? `<span class="dwarn">Large file: Detail 0.25 or 0.3 mm (Print quality, above) makes it much smaller.</span>` : '');
 }
 async function saveSTL() {
-  if (!haveSource()) return; const btn = $('btnSave'); btn.disabled = true;
+  if (!haveSource()) return;
+  { const chk = checkGeometry(spec(0)); if (chk.err.length) { setStatus('saveStatus', 'Not saved: ' + chk.err[0], 'err'); updateDims(); return; } }
+  const btn = $('btnSave'); btn.disabled = true;
   const name = `${S.imgName}_litho_${S.shape}.stl`;
   try { const nm = await saveAs(name, async () => { setStatus('saveStatus', 'Building the model…'); await tick();
       const b = S.ltB || await ltBrightness(); S.ltB = b;
@@ -1766,7 +1834,7 @@ function updateFields() {
   const bk = baseKind(), bon = $('baseOn').checked; $('baseNone').hidden = !!bk; for (const id of ['baseOn']) $(id).closest('label').hidden = !bk;
   $('baseKv').hidden = !bk || !bon; $('btnSaveBase').closest('.row').hidden = !bk || !bon; $('baseStatus').hidden = !bk || !bon;
   for (const el of document.querySelectorAll('[data-b]')) el.hidden = !bk || !el.dataset.b.split(' ').includes(bk);
-  $('baseLead').textContent = bk === 'flat' ? 'A foot with a slot the plate stands in. Put a light behind it.' : bk === 'globe' ? 'A round stand the globe sits on, with a ring that locates in its hole and a pocket for an LED puck or tea light.' : bk === 'shade' ? 'A base the shade drops into, with a pocket for an LED puck or tea light and a cable hole. Print it in any colour.' : '';
+  $('baseLead').textContent = bk === 'flat' ? 'A foot with a slot the plate stands in. Put a light behind it.' : bk === 'globe' ? 'A round stand the globe sits on, with a ring that locates in its hole and a pocket for an LED puck or LED tea light.' : bk === 'shade' ? 'A base the shade drops into, with a pocket for an LED puck or LED tea light and a cable hole. Print it in any colour.' : '';
   $('basePill').hidden = !bk;
   { const sl = $('ltSL').value, mk = ['auto', 'key'].includes($('maskSrc').value) ? 'key' : $('maskSrc').value;
     for (const el of document.querySelectorAll('[data-sl]')) el.hidden = !el.dataset.sl.split(' ').includes(sl);
@@ -1809,9 +1877,9 @@ function updateGuide() {
   else if (S.busy) now = 'Making the normals… the 3D view opens when they\'re done.';
   else if (!src) now = S.normalSess ? 'Press <b>Make normals</b> (below), or <button class="mini act" data-act="photo">Use Photo (classic)</button>'
     : 'Choose how to make it: <button class="mini act" data-act="photo">Photo (classic) · no download</button> <button class="mini act" data-act="load">Relit · load the AI model (once)</button>';
-  else if (st === 'pic') now = 'Ready. Go to <b>2 Shape</b> to choose what to make.';
-  else if (st === 'shape') now = 'Pick a shape and set its size. The 3D view updates as you go. Then <b>3 Light</b>.';
-  else if (st === 'light') now = relit ? 'Move the light to change how the carving reads. Then <b>4 Export</b>.' : 'Adjust contrast and brightness while you watch the <b>Backlit</b> view. Then <b>4 Export</b>.';
+  else if (st === 'pic') now = `Ready. Go to <b>2 ${relit ? 'Light' : 'Tone'}</b> to set the look while it's still a flat plate.`;
+  else if (st === 'light') now = (relit ? 'Move the light to change how the carving reads.' : 'Adjust contrast and brightness while you watch the <b>Backlit</b> view.') + ' Then <b>3 Shape</b> to put it on a shape.';
+  else if (st === 'shape') now = 'Pick a shape and set its size. The 3D view updates as you go. Then <b>4 Export</b>.';
   else now = 'Check the sizes, add fittings or a base if you want, then <b>Save STL</b>.';
   $('gNow').innerHTML = '<b>Now:</b> ' + now; $('gNowBig').innerHTML = '<b>Now:</b> ' + now;
   for (const c of document.querySelectorAll('.gstep')) c.classList.toggle('on', c.dataset.g === st);
@@ -1905,7 +1973,7 @@ S.step = 'pic'; setMode(kept && kept.mode === 'photo' ? 'photo' : 'relit'); { co
 $('ltAzV').textContent = $('ltAz').value + '°'; $('ltElV').textContent = $('ltEl').value + '°'; $('ltToneV').textContent = $('ltTone').value + '%'; $('ltGammaV').textContent = (+$('ltGamma').value).toFixed(2); $('bulbHV').textContent = $('bulbH').value + '%';
 $('ltConV').textContent = $('ltCon').value + '%'; $('ltBriV').textContent = (+$('ltBri').value > 0 ? '+' : '') + $('ltBri').value; lt3dUniforms(); updateFields(); updateButtons(); showCanvas(false);
 if (navigator.gpu) navigator.gpu.requestAdapter().then(a => { if (!a) setStatus('statNormal', 'No WebGPU graphics in this browser: the model would run on the processor (slow). Use Chrome or Edge.', 'err'); });
-window.__lithoApi = { T3, sampler, show3D, buildBase, baseSTL, setSession, runNormals, still() { S.still = true; }, buildGrid, buildMesh, meshSTL, ltBrightness, ltPlate, ltSTL, spec, setShape, setMode, setView, refresh, openProject, onImage };
+window.__lithoApi = { T3, sampler, show3D, buildBase, baseSTL, setSession, runNormals, still() { S.still = true; }, buildGrid, buildMesh, meshSTL, ltBrightness, ltPlate, plateDims, ltSTL, spec, checkGeometry, fullSize, updateDims, spreadMM, ringHole, setShape, setMode, setView, refresh, openProject, onImage };
 })();
 
 </script>
