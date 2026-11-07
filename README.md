@@ -34,6 +34,25 @@ From the maker of [Relief Forge](https://snazzygaz.github.io/DepthNormal/).
 
 **Printing:** white PLA, 100% infill, 0.1–0.12 mm layers. View from the textured side with a light behind. For lamps, use an LED bulb, LED puck or LED tea light, never a flame.
 
+## A window on your computer
+
+You can run the same app in its own desktop window. Install [Node.js](https://nodejs.org) (a current LTS version), open a terminal in this folder, then run:
+
+```sh
+npm install
+npm start
+```
+
+To make a portable Windows app (64-bit):
+
+```sh
+npm run build:win
+```
+
+The `.exe` is in `dist/`. There is nothing to install: open it to start. It is unsigned, so Windows may show a SmartScreen warning. Only run builds from a source you trust. On Linux, `npm run build:linux` makes an AppImage in the same folder. Building needs internet access to download Electron and the packaging tools.
+
+The desktop window keeps your pictures on your computer. It still needs internet for its web libraries and fonts, and for the first AI model download; this is not a fully offline bundle. Its model cache and settings are separate from your browser's. Relit uses WebGPU where the graphics card and driver support it; Photo mode does not need an AI model. Save STL opens a normal Save As dialog so you can choose the folder and filename.
+
 ## Print checks
 
 Before saving, the Export step checks the settings for geometry that can't print properly, and says why:

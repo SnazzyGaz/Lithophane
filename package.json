@@ -1,0 +1,47 @@
+{
+  "name": "relief-forge-litho",
+  "version": "0.6.3",
+  "productName": "Relief Forge Litho",
+  "description": "Turn a picture into a lithophane you can 3D print.",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win portable --x64 --publish never",
+    "build:linux": "electron-builder --linux AppImage --x64 --publish never",
+    "test": "node scripts/check-geometry.mjs"
+  },
+  "devDependencies": {
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "app.reliefforge.litho",
+    "productName": "Relief Forge Litho",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**",
+      "index.html",
+      "samples/**",
+      "LICENSE",
+      "THIRD_PARTY_NOTICES.md",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": "portable",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "Relief-Forge-Litho-${version}-Windows-${arch}.${ext}"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Graphics",
+      "artifactName": "Relief-Forge-Litho-${version}-Linux-${arch}.${ext}"
+    }
+  }
+}
