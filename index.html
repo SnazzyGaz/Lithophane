@@ -1,0 +1,1684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relief Forge Litho</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='26' fill='%23141517'/%3E%3Cg transform='translate(0 26)'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0.35' y2='1'%3E%3Cstop offset='0' stop-color='%23f4f4f2'/%3E%3Cstop offset='1' stop-color='%23a3a4a1'/%3E%3C/linearGradient%3E%3Cmask id='m' maskUnits='userSpaceOnUse' x='0' y='0' width='130' height='80'%3E%3Crect width='130' height='80' fill='%23fff'/%3E%3Cpath d='M8 70 L45 20 L82 70 Z M67 5 L79 20 L67 35 L55 20 Z' stroke='%23000' stroke-width='6'/%3E%3C/mask%3E%3C/defs%3E%3Cpath d='M86 31 L120 70 L52 70 Z' fill='url(%23g)' mask='url(%23m)'/%3E%3Cpath d='M8 70 L45 20 L82 70 Z' fill='url(%23g)'/%3E%3Cpath d='M67 5 L79 20 L67 35 L55 20 Z' fill='url(%23g)'/%3E%3C/g%3E%3C/svg%3E">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<style>
+:root{
+  --bg:#141517; --side:#1a1b1e; --card:#1f2023; --card2:#25272b; --line:#2c2e33; --line2:#3a3c42;
+  --ink:#ece9e4; --ink2:#cfcac2; --mute:#8d8a85; --faint:#6f6c68;
+  --acc:#c08a4e; --acc2:#d9a86c; --accbg:rgba(192,138,78,.13); --accline:rgba(192,138,78,.45);
+  --ok:#8fc0a0; --err:#e58a72; --r:12px;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 Manrope,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.app{display:grid;grid-template-columns:380px 1fr;height:100vh}
+.side{background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.brand{display:flex;align-items:center;gap:10px;padding:16px 18px 12px}
+.brand svg{flex:none}
+.brand h1{font-size:17px;font-weight:600;letter-spacing:-.01em;margin:0}
+.brand p{margin:0;color:var(--mute);font-size:11.5px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:0 12px 12px;border-bottom:1px solid var(--line)}
+.step{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px 7px;border-radius:8px;color:var(--mute);font-size:11.5px;font-weight:500}
+.step:hover{background:var(--card);color:var(--ink2)}
+.step .n{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line2);font-size:11px;font-weight:700;color:var(--mute);background:var(--side)}
+.step.on{background:var(--accbg);color:var(--acc2)}
+.step.on .n{border-color:var(--acc);color:var(--acc)}
+.step.done .n{background:var(--acc);border-color:var(--acc);color:#1a1208}
+.step:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.panes{flex:1;overflow-y:auto;padding:14px 14px 28px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.pane{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 13px}
+.card h3{margin:0 0 9px;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card h3 .pill{text-transform:none;letter-spacing:0}
+.lead{color:var(--mute);font-size:12px;margin:0 0 2px}
+.row{display:flex;gap:6px;align-items:center;margin:7px 0 0;flex-wrap:wrap}
+.grow{flex:1}
+button,.btn{appearance:none;border:1px solid var(--line2);background:var(--card2);color:var(--ink);padding:7px 11px;border-radius:7px;cursor:pointer;font:inherit;font-weight:500;line-height:1.2}
+button:hover:not(:disabled),.btn:hover{border-color:var(--acc)}
+button:focus-visible,.btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button.primary{background:var(--acc);border-color:var(--acc);color:#1a1208;font-weight:600}
+button.primary:hover:not(:disabled){background:var(--acc2);border-color:var(--acc2)}
+button.mini{padding:3px 8px;font-size:11.5px;border-radius:6px}
+button:disabled{opacity:.4;cursor:not-allowed}
+select,input[type=number]{background:var(--card2);color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:6px 8px;font:inherit;min-width:0}
+select{cursor:pointer;width:100%}
+input[type=number]{width:78px;font-family:var(--mono);font-size:12px}
+input[type=file]{display:none}
+.kv{display:grid;grid-template-columns:1fr minmax(0,1.2fr);gap:7px 10px;align-items:center}
+.kv>span{color:var(--ink2)}
+.unit{display:flex;align-items:center;gap:6px;color:var(--mute);font-size:12px}
+.status{font-size:12px;color:var(--mute);min-height:1.3em;word-break:break-word;margin-top:6px}
+.status:empty{display:none}
+.status.err{color:var(--err)} .status.ok{color:var(--ok)}
+.pill{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--card2);border:1px solid var(--line2);color:var(--mute);white-space:nowrap;font-weight:500}
+.pill.ok{color:var(--ok);border-color:rgba(140,197,138,.35)}
+.help{color:var(--mute);font-size:11.5px;line-height:1.4}
+.chk{display:flex;gap:8px;align-items:center;margin:8px 0 0;color:var(--ink2);cursor:pointer}
+.chk input{accent-color:var(--acc);width:15px;height:15px;flex:none}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--card2);border:1px solid var(--line2);border-radius:8px;padding:3px}
+.seg button{border:0;background:transparent;padding:7px 6px;border-radius:6px;color:var(--mute)}
+.seg button.on{background:var(--accbg);color:var(--acc2);box-shadow:inset 0 0 0 1px var(--accline)}
+.shapes{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.shapes button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px 6px;font-size:11px;color:var(--ink2)}
+.shapes button svg{width:30px;height:26px;stroke:currentColor;fill:none;stroke-width:1.6}
+.shapes button.on{background:var(--accbg);border-color:var(--acc);color:var(--acc2)}
+input[type=range]{width:100%;height:18px;margin:0;background:transparent;appearance:none;-webkit-appearance:none;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--line2)}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--line2)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--ink);border:3px solid var(--acc);margin-top:-5.5px}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:var(--ink);border:3px solid var(--acc)}
+.sl{display:flex;align-items:center;gap:8px}
+.sl input{flex:1}
+.sl .v{font-family:var(--mono);font-size:11.5px;color:var(--ink2);min-width:42px;text-align:right}
+progress{width:100%;height:6px;accent-color:var(--acc)}
+.sub{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);margin:12px 0 6px}
+.dims{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;align-items:baseline}
+.dims .dk{color:var(--mute);font-size:12px}
+.dims .dv{color:var(--ink);font:500 12.5px var(--mono)}
+.dims .dv small{display:block;font:11px Manrope,system-ui,sans-serif;color:var(--mute);margin-top:1px}
+.dims .dwarn{grid-column:1/-1;font-size:11.5px;color:var(--acc2);border-top:1px solid var(--line);padding-top:7px}
+main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.viewbar{display:flex;gap:6px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{padding:5px 10px;font-size:12px;border-radius:6px;background:transparent;border-color:transparent;color:var(--mute)}
+.tab.on{background:var(--card2);border-color:var(--line2);color:var(--ink)}
+.stage{flex:1;position:relative;min-height:0;display:grid;place-items:center;padding:14px;background:#111214}
+.stage canvas.v2{position:absolute;inset:14px;width:calc(100% - 28px);height:calc(100% - 28px);object-fit:contain;image-rendering:auto}
+#v3d{position:absolute;inset:0;cursor:grab}
+.foot{display:flex;gap:14px;align-items:center;padding:8px 14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mute);flex-wrap:wrap}
+.foot .sl{min-width:170px}
+.foot .grow{flex:1}
+.mono{font-family:var(--mono)}
+
+.gbar{margin:10px 14px 0;padding:9px 11px;border-radius:9px;background:var(--accbg);border:1px solid var(--accline);font-size:12.5px;color:var(--ink2);line-height:1.45}
+.gbar:empty{display:none} .gbar b{color:var(--acc2);font-weight:600}
+.vlab{font-size:10.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-right:2px}
+.vcap{padding:7px 14px;font-size:12px;color:var(--mute);border-bottom:1px solid var(--line);background:var(--side)}
+.vcap:empty{display:none} .vcap b{color:var(--ink2);font-weight:600}
+.empty{color:var(--mute);text-align:center;max-width:680px;line-height:1.6}
+.empty h2{color:var(--ink);font-size:18px;font-weight:600;margin:14px 0 6px}
+.empty p{margin:0}
+.guide{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0 0;text-align:left}
+.gstep{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:10px 11px;font-size:12px;line-height:1.45;display:flex;flex-direction:column;gap:4px}
+.gstep b{color:var(--ink2);font-weight:600;font-size:12.5px;display:flex;align-items:center;gap:7px}
+.gstep i{font-style:normal;width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:10.5px;background:var(--card2);color:var(--mute)}
+.gstep.on{border-color:var(--accline);background:var(--accbg)}
+.gstep.on b{color:var(--ink)} .gstep.on i{background:var(--acc);color:#1a1208}
+.routes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;text-align:left;font-size:12px}
+.routes>div{border:1px dashed var(--line2);border-radius:10px;padding:9px 11px}
+.routes b{color:var(--ink2)}
+.routes [data-m]{cursor:pointer} .routes [data-m]:hover{border-color:var(--acc)} .routes [data-m].on{border-style:solid;border-color:var(--accline);background:var(--accbg)}
+button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);color:#1a1208;font-weight:600}
+.gnow{margin-top:14px;font-size:13px;color:var(--ink2)} .gnow b{color:var(--acc2);font-weight:600}
+.shapes{grid-template-columns:repeat(4,1fr)}
+@media (max-width:900px){.guide,.routes{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){.app{grid-template-columns:1fr;height:auto}.stage{min-height:60vh}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+  <div class="brand">
+    <svg width="40" height="24" viewBox="4 2 120 72" aria-hidden="true"><defs><linearGradient id="rfga1" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#f4f4f2"/><stop offset="0.55" stop-color="#c9c9c6"/><stop offset="1" stop-color="#8e8f8c"/></linearGradient><mask id="rfma1" maskUnits="userSpaceOnUse" x="0" y="0" width="130" height="80"><rect width="130" height="80" fill="#fff"/><path d="M8 70 L45 20 L82 70 Z M67 5 L79 20 L67 35 L55 20 Z" stroke="#000" stroke-width="6"/></mask></defs><path class="m3" d="M86 31 L120 70 L52 70 Z" fill="url(#rfga1)" mask="url(#rfma1)"/><path class="m1" d="M8 70 L45 20 L82 70 Z" fill="url(#rfga1)"/><path class="m2" d="M67 5 L79 20 L67 35 L55 20 Z" fill="url(#rfga1)"/></svg>
+    <div><h1>Relief Forge <span style="color:var(--acc)">Litho</span></h1><p>Picture to lit lithophane · <span id="appVer"></span></p></div>
+  </div>
+  <nav class="steps">
+    <button class="step on" data-step="pic"><span class="n">1</span>Picture</button>
+    <button class="step" data-step="shape"><span class="n">2</span>Shape</button>
+    <button class="step" data-step="light"><span class="n">3</span><span id="stepLightLab">Light</span></button>
+    <button class="step" data-step="export"><span class="n">4</span>Export</button>
+  </nav>
+  <div class="gbar" id="gNow"></div>
+  <div class="panes">
+
+  <!-- ============ 1 PICTURE ============ -->
+  <div class="pane" data-pane="pic">
+    <div class="card">
+      <h3>Picture</h3>
+      <div class="row"><label class="btn grow" for="fileImg" style="text-align:center">Open picture…</label><input type="file" id="fileImg" accept="image/*">
+        <label class="btn" for="fileProj" title="Use the picture and AI normals from a saved Relief Forge project: no model needed.">Open .relief…</label><input type="file" id="fileProj" accept=".relief,.zip"></div>
+      <div class="status" id="picStatus"></div>
+      <div class="sub">How it's made</div>
+      <div class="seg" id="modeSeg"><button data-m="relit" class="on" title="AI normals, lit by a light you set: the subject looks carved, like lit marble.">Relit (AI normals)</button><button data-m="photo" title="Classic lithophane: the photo's own light and dark becomes thickness.">Photo (classic)</button></div>
+      <p class="help" id="modeHelp" style="margin-top:7px"></p>
+      <div class="kv" style="margin-top:8px">
+        <span>Working size</span><select id="workRes"><option value="1024">1024 px</option><option value="1536">1536 px</option><option value="2048" selected>2048 px</option><option value="3072">3072 px</option></select>
+      </div>
+      <p class="help" id="nrmHint" hidden style="margin-top:8px">For the carved, lit-marble look, switch to <b>Relit</b>: it uses the AI normal model.</p>
+      <div class="row" style="margin-top:10px"><button class="mini ghost" id="btnReset" title="Puts every setting back to how it starts. Your settings are otherwise remembered in this browser.">Reset all settings</button></div>
+    </div>
+
+    <div class="card" id="nrmCard">
+      <h3>AI normals <span class="pill" id="nrmPill">none</span></h3>
+      <p class="lead">Which way each bit of the surface faces, worked out by MoGe-2. Only the normal model is needed (no depth model).</p>
+      <div class="kv" style="margin-top:8px">
+        <span>Model</span><select id="normalSel"><option value="vitl">MoGe-2 · ViT-L · best (~1.3 GB)</option><option value="vitb" selected>MoGe-2 · ViT-B · balanced (~420 MB)</option><option value="vits">MoGe-2 · ViT-S · fast (~140 MB)</option></select>
+      </div>
+      <div class="row"><button id="btnLoadNormal" class="grow">Download &amp; load</button><label class="btn" for="fileNormalModel">From disk…</label><input type="file" id="fileNormalModel" accept=".onnx,.data,.onnx_data" multiple><span class="pill" id="epNormal">not loaded</span></div>
+      <progress id="progNormal" hidden value="0" max="1"></progress>
+      <div class="status" id="statNormal"></div>
+      <div class="sub">Detail</div>
+      <div class="kv">
+        <span title="How finely the model looks at each part. More tokens: finer detail, more memory.">Tokens</span><select id="nTok"><option value="1200">1200 tokens</option><option value="1800">1800 tokens</option><option value="2500" selected>2500 tokens</option><option value="3600">3600 tokens</option></select>
+        <span title="Runs the model on overlapping tiles for more detail on large pictures.">Normal tiles</span><select id="nTiles"><option value="0">Off (whole image)</option><option value="2">2 across</option><option value="3" selected>3 across</option><option value="4">4 across</option></select>
+      </div>
+      <label class="chk"><input type="checkbox" id="tta" checked> Flip averaging <span class="help">(2× time, cleaner)</span></label>
+      <label class="chk" title="Runs each tile a second time shifted by half a model patch and averages: the model's patch grid cancels out. About 2× time. For most detail, pair with 4 across."><input type="checkbox" id="maxQ"> Max quality (shift averaging) <span class="help">(~2× time)</span></label>
+      <label class="chk" title="Removes the faint waffle-grid pattern the model can leave on flat areas. Real detail is kept."><input type="checkbox" id="gridNrm" checked> Remove patch grid <span class="help" id="gridInfo"></span></label>
+      <label class="chk" title="Adds the picture's finest strokes (hair, engraving, texture) back into the normals, only where the picture's shading follows them. Best on stone or clay pictures."><input type="checkbox" id="edgeNrm"> Fine detail from the picture <select id="edgeAmt" style="width:auto;margin-left:4px;padding:3px 6px"><option value="0.5">subtle</option><option value="1" selected>normal</option><option value="2">strong</option></select> <span class="help" id="edgeInfo"></span></label>
+      <div class="row"><button id="btnRun" class="primary grow" disabled>Make normals</button><button id="btnCancel" class="mini" hidden>Cancel</button></div>
+      <progress id="runProg" hidden value="0" max="1"></progress>
+      <div class="status" id="runStatus"></div>
+      <div class="sub">Or bring your own</div>
+      <p class="help" style="margin:0 0 4px">A normal map from Blender, Substance, Relief Forge or similar, the same size and framing as the picture. If bumps look like dents, switch the type.</p>
+      <div class="row"><label class="btn mini" for="fileNrmMap">Upload normal map…</label><input type="file" id="fileNrmMap" accept="image/*"><select id="nrmConv" style="width:auto;padding:3px 6px" title="Normal maps come in two flavours that differ only in which way green points. OpenGL: Blender, Substance, most tools and Relief Forge. DirectX: Unreal, 3ds Max. If the lighting looks upside down (bumps look like dents), switch it."><option value="gl">OpenGL type (Blender, most tools)</option><option value="dx">DirectX type (Unreal, 3ds Max)</option></select><label class="chk" style="margin:0"><input type="checkbox" id="upFlipX"> flip X</label><button id="btnClrNrm" class="mini" hidden>Clear</button></div>
+    </div>
+  </div>
+
+  <!-- ============ 2 SHAPE ============ -->
+  <div class="pane" data-pane="shape" hidden>
+    <div class="card">
+      <h3>Shape</h3>
+      <div class="shapes" id="shapeBtns">
+        <button data-s="flat" class="on"><svg viewBox="0 0 30 26"><rect x="5" y="4" width="20" height="18" rx="1"/></svg>Flat</button>
+        <button data-s="arc"><svg viewBox="0 0 30 26"><path d="M4 8q11-7 22 0v12q-11-7-22 0z"/></svg>Curved</button>
+        <button data-s="cyl"><svg viewBox="0 0 30 26"><ellipse cx="15" cy="5" rx="9" ry="3"/><path d="M6 5v16q9 5 18 0V5"/></svg>Lampshade</button>
+        <button data-s="cone"><svg viewBox="0 0 30 26"><ellipse cx="15" cy="5" rx="6" ry="2"/><path d="M9 5L4 21q11 5 22 0L21 5"/></svg>Tapered</button>
+        <button data-s="poly"><svg viewBox="0 0 30 26"><path d="M8 4h14l4 4v14H4V8z"/><path d="M8 4v18M22 4v18"/></svg>Lantern</button>
+        <button data-s="rev" data-p="vase"><svg viewBox="0 0 30 26"><path d="M11 3h8M12 3q0 4-4 8t1 12h12q5-4 1-12t-4-8"/></svg>Vase</button>
+        <button data-s="rev" data-p="bell"><svg viewBox="0 0 30 26"><path d="M12 3h6M12 3q-2 2-2 6 0 7-6 13h22q-6-6-6-13 0-4-2-6"/></svg>Bell</button>
+        <button data-s="sphere"><svg viewBox="0 0 30 26"><circle cx="15" cy="12" r="9"/><path d="M10 20h10"/></svg>Globe</button>
+        <button data-s="dome"><svg viewBox="0 0 30 26"><path d="M5 20a10 10 0 0 1 20 0z"/></svg>Dome</button>
+        <button data-s="heart"><svg viewBox="0 0 30 26"><path d="M15 22C5 15 4 10 6 7c2-3 7-3 9 1 2-4 7-4 9-1 2 3 1 8-9 15z"/></svg>Heart</button>
+        <button data-s="disc"><svg viewBox="0 0 30 26"><circle cx="15" cy="14" r="8"/><circle cx="15" cy="4" r="2"/></svg>Ornament</button>
+      </div>
+      <p class="help" id="shapeHelp" style="margin-top:8px"></p>
+    </div>
+    <div class="card">
+      <h3>Size</h3>
+      <div class="kv" id="sizeKv">
+        <span data-for="flat arc heart disc">Width</span><span class="unit" data-for="flat arc heart disc"><input type="number" id="ltW" value="100" min="20" max="400" step="5"> mm <select id="sizePreset" style="width:auto;padding:3px 6px" title="Common print sizes: the long side of the whole plate, frame included, so it fits a photo frame of that size"><option value="">Sizes…</option><option value="100">100 mm</option><option value="152.4">4 × 6 in</option><option value="177.8">5 × 7 in</option><option value="203.2">6 × 8 in</option><option value="148">A6</option><option value="210">A5</option></select></span>
+        <span data-for="arc">Curve</span><span class="unit" data-for="arc"><input type="number" id="arcA" value="120" min="20" max="300" step="5"> °</span>
+        <span data-for="rev">Profile</span><select id="revProf" data-for="rev"><option value="vase">Vase</option><option value="bell">Bell</option><option value="barrel">Barrel</option><option value="hourglass">Hourglass</option><option value="tulip">Tulip</option><option value="bowl">Bowl</option></select>
+        <span data-for="cyl sphere dome" title="Diameter of the smooth side. With the texture outside this is the inside diameter.">Diameter</span><span class="unit" data-for="cyl sphere dome"><input type="number" id="cylD" value="80" min="20" max="400" step="1"> mm</span>
+        <span data-for="rev" title="Diameter of the smooth side at its widest point.">Widest Ø</span><span class="unit" data-for="rev"><input type="number" id="revD" value="110" min="20" max="400" step="1"> mm</span>
+        <span data-for="cone">Bottom Ø</span><span class="unit" data-for="cone"><input type="number" id="coneB" value="110" min="20" max="400" step="1"> mm</span>
+        <span data-for="cone">Top Ø</span><span class="unit" data-for="cone"><input type="number" id="coneT" value="70" min="10" max="400" step="1"> mm</span>
+        <span data-for="poly">Sides</span><span class="unit" data-for="poly"><input type="number" id="polyN" value="6" min="3" max="12" step="1"> <span class="help">(4 = box)</span></span>
+        <span data-for="poly" title="Across opposite flat faces, on the smooth side.">Across flats</span><span class="unit" data-for="poly"><input type="number" id="polyW" value="90" min="20" max="400" step="1"> mm</span>
+        <span data-for="cyl cone poly rev">Height</span><span class="unit" data-for="cyl cone poly rev"><input type="number" id="cylH" value="120" min="10" max="400" step="1"> mm <button class="mini" id="btnFitH" title="Height that shows the whole picture without cropping">Match picture</button></span>
+        <span data-for="cyl">Wrap</span><span class="unit" data-for="cyl"><input type="number" id="cylA" value="360" min="30" max="360" step="5"> ° <span class="help">(360 = closed)</span></span>
+        <span data-for="sphere" title="Hole underneath for the light. It also gives the globe a flat ring to stand on.">Bottom hole Ø</span><span class="unit" data-for="sphere"><input type="number" id="sphB" value="45" min="10" max="300" step="1"> mm</span>
+        <span data-for="sphere">Top hole Ø</span><span class="unit" data-for="sphere"><input type="number" id="sphT" value="0" min="0" max="300" step="1"> mm <span class="help">(0 = closed)</span></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Thickness</h3>
+      <p class="lead">Thin lets light through (bright), thick blocks it (dark).</p>
+      <div class="kv" style="margin-top:8px">
+        <span>Thinnest</span><span class="unit"><input type="number" id="ltTmin" value="0.8" min="0.3" max="3" step="0.1"> mm</span>
+        <span>Thickest</span><span class="unit"><input type="number" id="ltTmax" value="3" min="1" max="8" step="0.1"> mm</span>
+        <span data-for="flat arc heart disc" title="Solid border round the picture">Frame</span><span class="unit" data-for="flat arc heart disc"><input type="number" id="ltFrame" value="4" min="0" max="20" step="1"> mm</span>
+        <span data-for="cyl cone poly sphere rev" title="Solid band along the top edge">Top rim</span><span class="unit" data-for="cyl cone poly sphere rev"><input type="number" id="rimT" value="4" min="0" max="40" step="0.5"> mm</span>
+        <span data-for="cyl cone poly sphere rev dome" title="Solid band along the bottom edge">Bottom rim</span><span class="unit" data-for="cyl cone poly sphere rev dome"><input type="number" id="rimB" value="6" min="0" max="40" step="0.5"> mm</span>
+        <span title="Ramps the picture up to the full thickness of the frame or rims over this distance, so they meet without a step. 0 = off (as Relief Forge). Try 2–4 mm.">Soften into rims</span><span class="unit"><input type="number" id="softR" value="0" min="0" max="30" step="0.5"> mm</span>
+      </div>
+    </div>
+    <div class="card" id="picCard">
+      <h3>Picture on the shape</h3>
+      <div class="kv">
+        <span title="Moves the picture round the shape (or across a flat piece). You can also drag it in the Backlit or Baked picture view.">Left ↔ right</span><span class="sl"><input type="range" id="picX" min="-150" max="150" step="0.5" value="0"><span class="v" id="picXV">0 mm</span></span>
+        <span title="Moves the picture up or down.">Down ↔ up</span><span class="sl"><input type="range" id="picY" min="-150" max="150" step="0.5" value="0"><span class="v" id="picYV">0 mm</span></span>
+        <span title="100% = as the Fit setting places it. Scroll in the Backlit or Baked picture view to zoom too.">Zoom</span><span class="sl"><input type="range" id="picZ" min="20" max="400" step="1" value="100"><span class="v" id="picZV">100%</span></span>
+        <span></span><span><button class="mini" id="btnPicC">Centre &amp; reset</button></span>
+        <span data-for="cyl cone poly sphere rev dome">Fit</span><select id="fitMode" data-for="cyl cone poly sphere rev dome"><option value="fit" selected>Whole picture (plain around it)</option><option value="fill">Fill (crop to fit)</option><option value="stretch">Stretch to fill</option><option value="repeat">Repeat around</option><option value="tile">Tile (cover everything)</option><option value="mirror">Mirror tile (seamless sides)</option></select>
+        <span data-for="cyl cone poly sphere rev dome" id="repLab">Repeats</span><span class="unit" data-for="cyl cone poly sphere rev dome" id="repBox"><input type="number" id="repN" value="2" min="1" max="12" step="1"></span>
+        <span data-tile="size" title="100% = one picture fits the height. Smaller: more, smaller tiles.">Tile size</span><span class="unit" data-tile="size"><input type="number" id="tileS" value="100" min="10" max="300" step="5"> %</span>
+        <span data-tile="blend" title="Neighbouring tiles overlap by this much and cross-fade, so the joins don't show as lines. Mirror tile: rows only (side by side they already match).">Join blend</span><span class="unit" data-tile="blend"><input type="number" id="tileBlend" value="6" min="0" max="60" step="1"> mm</span>
+        <span data-tile="exact" title="Sizes the tiles so a whole number fits round and up: no part tile, no seam at the back.">Fit tiles exactly</span><label class="chk" style="margin:0" data-tile="exact"><input type="checkbox" id="tileExact" checked> whole tiles only</label>
+        <span data-for="cyl cone poly sphere rev dome" title="How far round the picture goes. The rest is plain.">Picture spans</span><span class="unit" data-for="cyl cone poly sphere rev dome"><input type="number" id="spanA" value="360" min="30" max="360" step="5"> °</span>
+        <span title="What happens where the picture doesn't reach (also when you move it or zoom out).">Around the picture</span><select id="aroundMode"><option value="fade" selected>Fade out</option><option value="extend">Extend the edges</option><option value="plain">Plain (hard edge)</option></select>
+        <span data-around="plain fade">Plain area</span><select id="aroundPlain" data-around="plain fade"><option value="thick" selected>Thick (dark)</option><option value="glow">Thin (glows)</option></select>
+        <span data-around="fade extend" title="Fade: how far the picture takes to fade out. Extend: how far the edge stays sharp before it softens.">Fade width</span><span class="unit" data-around="fade extend"><input type="number" id="aroundW" value="8" min="0.5" max="100" step="0.5"> mm</span>
+        <span data-for="flat heart disc cyl cone arc poly sphere rev dome" id="texLab" title="Lamps: texture outside (smooth inside, the usual) or inside (smooth, easy-clean outside). Flat pieces: which side faces the viewer; with the smooth side out, the picture is mirrored so it reads the right way round.">Texture side</span><select id="texSide" data-for="flat heart disc cyl cone arc poly sphere rev dome"><option value="out" selected>Outside</option><option value="in">Inside</option></select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3 LIGHT ============ -->
+  <div class="pane" data-pane="light" hidden>
+    <div class="card" id="lightCard">
+      <h3>Light on the carving</h3>
+      <p class="lead">The AI surface is lit by this light, then bright becomes thin and dark becomes thick. Watch the 3D view while you move it.</p>
+      <div class="kv" style="margin-top:8px">
+        <span>Light direction</span><span class="sl"><input type="range" id="ltAz" min="0" max="359" step="1" value="323"><span class="v" id="ltAzV">323°</span></span>
+        <span>Light height</span><span class="sl"><input type="range" id="ltEl" min="10" max="85" step="1" value="41"><span class="v" id="ltElV">41°</span></span>
+        <span title="Mixes in the photo's own light and dark (its colours and tones) on top of the relit carving. 0 = pure relit, as in Relief Forge.">Photo tone</span><span class="sl"><input type="range" id="ltTone" min="0" max="100" step="1" value="0"><span class="v" id="ltToneV">0%</span></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Tone</h3>
+      <div class="kv">
+        <span title="Keep the background as part of the picture, or separate it (from a transparent background, or the AI mask in Relit) and make it dark or glowing.">Background</span><select id="ltBg"><option value="keep" selected>Keep it</option><option value="dark">Make it dark (thick)</option><option value="glow">Make it glow (thin)</option></select>
+        <span title="Spreads or squeezes the tones. 100% = as is.">Contrast</span><span class="sl"><input type="range" id="ltCon" min="40" max="200" step="1" value="100"><span class="v" id="ltConV">100%</span></span>
+        <span title="Lighter (thinner) or darker (thicker) overall.">Brightness</span><span class="sl"><input type="range" id="ltBri" min="-40" max="40" step="1" value="0"><span class="v" id="ltBriV">0</span></span>
+        <span title="Lifts the very darkest shadows a little, so they become rounded bumps instead of sudden full-thickness cliffs.">Shadow softness</span><select id="ltSoft"><option value="0">Off</option><option value="0.04">Light</option><option value="0.08" selected>Medium</option><option value="0.15">Strong</option></select>
+        <span title="Below 1 brightens the mid-tones (thinner), above 1 darkens them. 1 = as Relief Forge.">Mid-tones</span><span class="sl"><input type="range" id="ltGamma" min="0.4" max="2.5" step="0.05" value="1"><span class="v" id="ltGammaV">1.00</span></span>
+        <span>Invert</span><label class="chk" style="margin:0"><input type="checkbox" id="ltInv"> bright ↔ dark</label>
+      </div>
+      <div class="status" id="maskInfo"></div>
+    </div>
+    <div class="card">
+      <h3>Light inside</h3>
+      <label class="chk" title="A bulb lights nearby parts more than far ones, so a shade looks bright near the bulb and dim at the rims. This thins the far parts to even it out."><input type="checkbox" id="bulbOn"> Even out the bulb's light</label>
+      <div class="kv" style="margin-top:8px">
+        <span title="Where the bulb sits, as % of the height (0 = bottom).">Bulb height</span><span class="sl"><input type="range" id="bulbH" min="0" max="100" step="1" value="30"><span class="v" id="bulbHV">30%</span></span>
+        <span data-for="flat arc heart disc" title="Distance from the back of the plate to the bulb.">Bulb distance</span><span class="unit" data-for="flat arc heart disc"><input type="number" id="bulbD" value="40" min="5" max="500" step="5"> mm</span>
+      </div>
+      <p class="help" style="margin-top:7px">To see the bulb's effect, set <b>Light in 3D</b> (under the 3D view) to <b>Bulb</b>, then switch this on and off.</p>
+    </div>
+  </div>
+
+  <!-- ============ 4 EXPORT ============ -->
+  <div class="pane" data-pane="export" hidden>
+    <div class="card">
+      <h3>Print quality</h3>
+      <div class="kv">
+        <span title="Same as in Shape: change it here or there.">Thinnest</span><span class="unit"><input type="number" id="ltTminX" value="0.8" min="0.3" max="3" step="0.1"> mm</span>
+        <span title="Same as in Shape: change it here or there.">Thickest</span><span class="unit"><input type="number" id="ltTmaxX" value="3" min="1" max="8" step="0.1"> mm</span>
+        <span>Detail</span><select id="ltRes"><option value="0.3">0.3 mm (small file)</option><option value="0.25">0.25 mm</option><option value="0.2" selected>0.2 mm · 0.4 nozzle</option><option value="0.15">0.15 mm</option><option value="0.1">0.1 mm (large file)</option></select>
+        <span title="Rounds off detail finer than the nozzle can print, so thin shadow lines don't become needle-like spikes.">Smoothing</span><span class="unit"><input type="number" id="ltSmooth" value="0.4" min="0" max="2" step="0.1"> mm</span>
+      </div>
+    </div>
+    <div class="card" id="fitCard">
+      <h3>Fittings</h3>
+      <div class="kv">
+        <span data-for="cyl cone poly rev dome" title="A solid floor across the bottom with a hole for an LED puck, tea light or lamp holder. Leave it open if you make a base.">Bottom</span><select id="botFit" data-for="cyl cone poly rev dome"><option value="open" selected>Open</option><option value="ring">Floor with a hole</option></select>
+        <span data-for="cyl cone poly rev" title="A ring across the top: hangs the shade on a pendant fitting or sits it on a lamp holder.">Top</span><select id="topFit" data-for="cyl cone poly rev"><option value="open" selected>Open</option><option value="ring">Ring with a hole</option></select>
+        <span data-for="cyl cone poly rev dome" title="Measure your fitting. Lamp-holder shade rings and LED pucks vary.">Hole Ø</span><span class="unit" data-for="cyl cone poly rev dome"><input type="number" id="holeD" value="40" min="5" max="300" step="0.5"> mm</span>
+        <span data-for="cyl cone poly rev dome">Plate thickness</span><span class="unit" data-for="cyl cone poly rev dome"><input type="number" id="plateT" value="2" min="0.8" max="6" step="0.2"> mm</span>
+        <span data-for="flat heart disc" title="A hole in the frame for a ribbon or hook.">Hanging hole</span><span class="unit" data-for="flat heart disc"><input type="number" id="hangD" value="0" min="0" max="15" step="0.5"> mm <span class="help">(0 = none)</span></span>
+      </div>
+      <p class="help" id="fitNone" style="margin:0" hidden>No fittings for this shape.</p>
+    </div>
+    <div class="card" id="baseCard">
+      <h3>Base / stand <span class="pill" id="basePill">separate print</span></h3>
+      <p class="lead" id="baseLead"></p>
+      <label class="chk"><input type="checkbox" id="baseOn"> Make one</label>
+      <div class="kv" id="baseKv" style="margin-top:8px">
+        <span data-b="shade globe" title="Height of the base body (without feet).">Base height</span><span class="unit" data-b="shade globe"><input type="number" id="bH" value="18" min="6" max="80" step="1"> mm</span>
+        <span data-b="shade globe" title="Round pocket for the light. Tea lights are about 38 mm across and 15 mm tall; LED pucks vary, so measure yours.">Light pocket Ø</span><span class="unit" data-b="shade globe"><input type="number" id="bPocket" value="40" min="10" max="250" step="0.5"> mm</span>
+        <span data-b="shade globe">Pocket depth</span><span class="unit" data-b="shade globe"><input type="number" id="bPocketD" value="12" min="1" max="70" step="0.5"> mm</span>
+        <span data-b="shade" title="How deep the shade's bottom edge sits in the base.">Seat depth</span><span class="unit" data-b="shade"><input type="number" id="bSeat" value="5" min="1" max="30" step="0.5"> mm</span>
+        <span data-b="flat">Stand depth</span><span class="unit" data-b="flat"><input type="number" id="sDep" value="30" min="10" max="120" step="1"> mm</span>
+        <span data-b="flat">Stand height</span><span class="unit" data-b="flat"><input type="number" id="sHt" value="12" min="5" max="60" step="0.5"> mm</span>
+        <span data-b="flat">Slot depth</span><span class="unit" data-b="flat"><input type="number" id="sSlot" value="7" min="2" max="40" step="0.5"> mm</span>
+        <span title="Gap between the print and the base, per side. 0.2–0.3 mm for a snug fit, 0.4–0.5 mm for an easy fit.">Fit clearance</span><span class="unit"><input type="number" id="bClr" value="0.3" min="0" max="2" step="0.05"> mm</span>
+        <span data-b="shade globe" title="For the cable: a hole through the floor, with feet so the cable can leave underneath.">Cable hole Ø</span><span class="unit" data-b="shade globe"><input type="number" id="bCable" value="7" min="0" max="30" step="0.5"> mm</span>
+        <span data-b="shade globe">Feet</span><label class="chk" style="margin:0" data-b="shade globe"><input type="checkbox" id="bFeet" checked> 4 mm feet</label>
+        <span>Show in 3D</span><label class="chk" style="margin:0"><input type="checkbox" id="bShow" checked> with the lithophane</label>
+      </div>
+      <div class="status" id="baseStatus"></div>
+      <div class="row"><button id="btnSaveBase" class="grow" disabled>Save base STL…</button></div>
+      <p class="help" id="baseNone" style="margin:0" hidden>No base for this shape (hang it instead).</p>
+    </div>
+    <div class="card">
+      <h3>Export</h3>
+      <div class="dims" id="dims">—</div>
+      <div class="row"><button id="btnSave" class="primary grow" disabled>Save STL…</button></div>
+      <div class="status" id="saveStatus"></div>
+      <p class="help" style="margin-top:8px" id="printTip">Print in white PLA, 100% infill, 0.1–0.12 mm layers. View from the textured side with a light behind.</p>
+    </div>
+  </div>
+
+  </div>
+</aside>
+
+<main>
+  <div class="viewbar" id="tabs">
+    <span class="vlab">Inputs</span>
+    <button class="tab on" data-v="input">Picture</button>
+    <button class="tab" data-v="normal" disabled>Normals</button>
+    <span class="vlab" style="margin-left:10px">Result</span>
+    <button class="tab" data-v="3d" disabled>3D</button>
+    <button class="tab" data-v="lit" disabled>Backlit</button>
+    <button class="tab" data-v="render" disabled>Baked picture</button>
+    <button class="tab" data-v="thick" disabled>Thickness</button>
+  </div>
+  <div class="vcap" id="vcap"></div>
+  <div class="stage" id="stage">
+    <div class="empty" id="dropMsg">
+      <svg width="96" height="58" viewBox="4 2 120 72" aria-hidden="true"><defs><linearGradient id="rfgb1" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#f4f4f2"/><stop offset="0.55" stop-color="#c9c9c6"/><stop offset="1" stop-color="#8e8f8c"/></linearGradient><mask id="rfmb1" maskUnits="userSpaceOnUse" x="0" y="0" width="130" height="80"><rect width="130" height="80" fill="#fff"/><path d="M8 70 L45 20 L82 70 Z M67 5 L79 20 L67 35 L55 20 Z" stroke="#000" stroke-width="6"/></mask></defs><path class="m3" d="M86 31 L120 70 L52 70 Z" fill="url(#rfgb1)" mask="url(#rfmb1)"/><path class="m1" d="M8 70 L45 20 L82 70 Z" fill="url(#rfgb1)"/><path class="m2" d="M67 5 L79 20 L67 35 L55 20 Z" fill="url(#rfgb1)"/></svg>
+      <h2>Turn a picture into a lithophane</h2>
+      <p>A thin print that shows the picture when a light shines through it. Make a flat plate, a lampshade, a globe and more.</p>
+      <div class="guide" id="guide">
+        <div class="gstep" data-g="pic"><b><i>1</i>Picture</b><span>Open a picture, or a .relief project from Relief Forge.</span></div>
+        <div class="gstep" data-g="shape"><b><i>2</i>Shape</b><span>Flat plate, lampshade, vase, globe… and its size.</span></div>
+        <div class="gstep" data-g="light"><b><i>3</i><span id="gstepLightLab">Light</span></b><span>Set the light on the carving, or the photo's contrast.</span></div>
+        <div class="gstep" data-g="export"><b><i>4</i>Export</b><span>Fittings, a base, and the STL to print.</span></div>
+      </div>
+      <div class="routes">
+        <div data-m="relit"><b>Relit (AI normals)</b> · the picture is rebuilt in 3D and lit by a light you set, so it looks carved, like lit marble. Needs the MoGe-2 normal model (one download), or a .relief project.</div>
+        <div data-m="photo"><b>Photo (classic)</b> · the picture's own light and dark becomes thickness, like most lithophane makers. No model needed.</div>
+      </div>
+      <div class="gnow" id="gNowBig"></div>
+    </div>
+    <canvas id="view" class="v2" hidden></canvas>
+    <div id="v3d" hidden title="Drag to spin, scroll to zoom"></div>
+  </div>
+  <div class="foot" id="foot3d" hidden>
+    <span>Light in 3D</span><select id="lt3Src" style="width:auto;padding:3px 6px"><option value="even">Even, behind</option><option value="bulb">Bulb</option></select>
+    <span class="sl" title="Light behind">Back <input type="range" id="lt3Back" min="0" max="200" value="100"><span class="v" id="lt3BackV">100%</span></span>
+    <span class="sl" title="Ordinary room light on the front: how it looks with the lamp off.">Room <input type="range" id="lt3Room" min="0" max="100" value="15"><span class="v" id="lt3RoomV">15%</span></span>
+    <select id="lt3Col" style="width:auto;padding:3px 6px"><option value="warm">Warm bulb</option><option value="neutral">Neutral</option><option value="cool">Daylight</option></select>
+    <span class="sl" title="How quickly light fades in your plastic: the thickness that halves it. White PLA is usually 0.4–0.6 mm.">Halves every <input type="range" id="lt3Half" min="15" max="120" value="45"><span class="v" id="lt3HalfV">0.45 mm</span></span>
+    <span class="unit" title="Light spreads sideways inside the plastic, softening fine detail.">Spread <input type="number" id="lt3Spread" value="0.3" min="0" max="2" step="0.1" style="width:60px"> mm</span>
+    <span class="grow"></span><button class="mini" id="btnFit3d">Fit view</button>
+  </div>
+  <div class="foot"><span id="info" class="mono"></span></div>
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.webgpu.min.js"></script>
+<script>
+const Core = (() => {
+  const f32 = new Float32Array(1), u32 = new Uint32Array(f32.buffer);
+  function boxSizes(sigma, n = 3) {
+    const wIdeal = Math.sqrt((12 * sigma * sigma / n) + 1);
+    let wl = Math.floor(wIdeal); if (wl % 2 === 0) wl--;
+    const wu = wl + 2;
+    const mIdeal = (12 * sigma * sigma - n * wl * wl - 4 * n * wl - 3 * n) / (-4 * wl - 4);
+    const m = Math.round(mIdeal);
+    const s = []; for (let i = 0; i < n; i++) s.push(i < m ? wl : wu);
+    return s;
+  }
+  function boxH(src, dst, w, h, r) {
+    const iarr = 1 / (r + r + 1);
+    for (let y = 0; y < h; y++) {
+      const o = y * w;
+      const fv = src[o], lv = src[o + w - 1];
+      let val = (r + 1) * fv;
+      for (let j = 0; j < r; j++) val += src[o + Math.min(j, w - 1)];
+      // same sums as one clamped loop, split where the clamps change so the middle part has none
+      const xa = Math.min(w, r + 1), xb = Math.max(xa, w - r);
+      for (let x = 0; x < xa; x++) { val += src[o + Math.min(x + r, w - 1)] - fv; dst[o + x] = val * iarr; }
+      for (let x = xa; x < xb; x++) { val += src[o + x + r] - src[o + x - r - 1]; dst[o + x] = val * iarr; }
+      for (let x = xb; x < w; x++) { val += lv - src[o + x - r - 1]; dst[o + x] = val * iarr; }
+    }
+  }
+  function boxV(src, dst, w, h, r) {
+    const iarr = 1 / (r + r + 1), acc = new Float64Array(w);
+    for (let x = 0; x < w; x++) acc[x] = (r + 1) * src[x];
+    for (let j = 0; j < r; j++) { const o = Math.min(j, h - 1) * w; for (let x = 0; x < w; x++) acc[x] += src[o + x]; }
+    for (let y = 0; y < h; y++) {
+      const a = Math.min(y + r, h - 1) * w, s = y - r - 1 >= 0 ? (y - r - 1) * w : 0, d = y * w;
+      for (let x = 0; x < w; x++) { acc[x] += src[a + x] - src[s + x]; dst[d + x] = acc[x] * iarr; }
+    }
+  }
+  function blur(src, w, h, sigma) {
+    if (sigma >= 24 && w >= 96 && h >= 96) {
+      const f = Math.max(2, Math.floor(sigma / 6)), w2 = Math.ceil(w / f), h2 = Math.ceil(h / f), s2 = new Float32Array(w2 * h2), c2 = new Float32Array(w2 * h2);
+      const cx = new Int32Array(w); for (let x = 0; x < w; x++) cx[x] = (x / f) | 0;
+      for (let y = 0; y < h; y++) { const r = ((y / f) | 0) * w2, o = y * w; for (let x = 0; x < w; x++) { const j = r + cx[x]; s2[j] += src[o + x]; c2[j]++; } }
+      for (let j = 0; j < s2.length; j++) s2[j] /= c2[j];
+      const b2 = blurFull(s2, w2, h2, Math.sqrt(Math.max(0.1, sigma * sigma - (f * f - 1) / 12)) / f), out = new Float32Array(w * h);
+      const X0 = new Int32Array(w), X1 = new Int32Array(w), TX = new Float64Array(w), UX = new Float64Array(w);
+      for (let x = 0; x < w; x++) { const fx = Math.min(w2 - 1, Math.max(0, (x + 0.5) / f - 0.5)), x0 = fx | 0; X0[x] = x0; X1[x] = Math.min(w2 - 1, x0 + 1); TX[x] = fx - x0; UX[x] = 1 - TX[x]; }
+      for (let y = 0; y < h; y++) { const fy = Math.min(h2 - 1, Math.max(0, (y + 0.5) / f - 0.5)), y0 = fy | 0, y1 = Math.min(h2 - 1, y0 + 1), ty = fy - y0, uy = 1 - ty, o = y * w, r0 = y0 * w2, r1 = y1 * w2;
+        for (let x = 0; x < w; x++) { const x0 = X0[x], x1 = X1[x], tx = TX[x], ux = UX[x];
+          out[o + x] = (b2[r0 + x0] * ux + b2[r0 + x1] * tx) * uy + (b2[r1 + x0] * ux + b2[r1 + x1] * tx) * ty; } }
+      return out;
+    }
+    return blurFull(src, w, h, sigma);
+  }
+  function blurFull(src, w, h, sigma) {
+    const out = new Float32Array(src);
+    if (!(sigma > 0.3)) return out;
+    const tmp = new Float32Array(src.length);
+    for (const b of boxSizes(sigma)) {
+      const r = (b - 1) >> 1;
+      if (r < 1) continue;
+      boxH(out, tmp, w, h, r); boxV(tmp, out, w, h, r);
+    }
+    return out;
+  }
+  function boxMean(a, w, h, r) { const t = new Float32Array(a.length), o = new Float32Array(a.length); boxH(a, t, w, h, r); boxV(t, o, w, h, r); return o; }
+  function labels(M, w, h) {
+    const N = w * h, L = new Int32Array(N), st = new Int32Array(N); let next = 0;
+    for (let s = 0; s < N; s++) {
+      if (!M[s] || L[s]) continue; next++; let sp = 0; st[sp++] = s; L[s] = next;
+      while (sp) { const i = st[--sp], x = i % w;
+        if (x > 0 && M[i - 1] && !L[i - 1]) { L[i - 1] = next; st[sp++] = i - 1; }
+        if (x < w - 1 && M[i + 1] && !L[i + 1]) { L[i + 1] = next; st[sp++] = i + 1; }
+        if (i >= w && M[i - w] && !L[i - w]) { L[i - w] = next; st[sp++] = i - w; }
+        if (i + w < N && M[i + w] && !L[i + w]) { L[i + w] = next; st[sp++] = i + w; } }
+    }
+    return L;
+  }
+  function tileGrid(w, h, n, overlap) {
+    const L = Math.max(w, h), S = Math.min(w, h);
+    const T = Math.ceil(L / (n - (n - 1) * overlap));
+    const along = (len) => {
+      const k = Math.max(1, Math.ceil((len - T) / (T * (1 - overlap)) - 1e-6) + 1);
+      if (len <= T) return [Math.round((len - T) / 2)];
+      const st = (len - T) / (k - 1); const r = [];
+      for (let i = 0; i < k; i++) r.push(Math.round(i * st));
+      return r;
+    };
+    void S;
+    const xs = along(w), ys = along(h), out = [];
+    for (const y0 of ys) for (const x0 of xs) out.push({ x0, y0, T, TW: T, TH: T });
+    return out;
+  }
+  function featherW(t, x, y, w, h, feather) {
+    const TW = t.TW || t.T, TH = t.TH || t.T;
+    const f = Math.max(1, feather * Math.min(TW, TH));
+    const lx = x - t.x0, ly = y - t.y0, rx = t.x0 + TW - 1 - x, ry = t.y0 + TH - 1 - y;
+    const ax = (t.x0 <= 0 ? 1 : Math.min(1, (lx + 0.5) / f)) * (t.x0 + TW >= w ? 1 : Math.min(1, (rx + 0.5) / f));
+    const ay = (t.y0 <= 0 ? 1 : Math.min(1, (ly + 0.5) / f)) * (t.y0 + TH >= h ? 1 : Math.min(1, (ry + 0.5) / f));
+    const s = v => v * v * (3 - 2 * v);
+    return s(Math.max(0, ax)) * s(Math.max(0, ay));
+  }
+  function samplePlanes(planes, SW, SH, t, w, h) {
+    const TW = t.TW || t.T, TH = t.TH || t.T;
+    const x1 = Math.max(0, t.x0), y1 = Math.max(0, t.y0), x2 = Math.min(w, t.x0 + TW), y2 = Math.min(h, t.y0 + TH);
+    const rw = x2 - x1, rh = y2 - y1, sx = SW / TW, sy = SH / TH;
+    const rs = planes.map(() => new Float32Array(rw * rh));
+    for (let y = y1; y < y2; y++) {
+      let v = (y - t.y0 + 0.5) * sy - 0.5; v = Math.min(SH - 1, Math.max(0, v));
+      const v0 = Math.floor(v), v1 = Math.min(SH - 1, v0 + 1), fv = v - v0;
+      for (let x = x1; x < x2; x++) {
+        let u = (x - t.x0 + 0.5) * sx - 0.5; u = Math.min(SW - 1, Math.max(0, u));
+        const u0 = Math.floor(u), u1 = Math.min(SW - 1, u0 + 1), fu = u - u0, o = (y - y1) * rw + (x - x1);
+        for (let p = 0; p < planes.length; p++) {
+          const q = planes[p];
+          const a = q[v0 * SW + u0] * (1 - fu) + q[v0 * SW + u1] * fu, b = q[v1 * SW + u0] * (1 - fu) + q[v1 * SW + u1] * fu;
+          rs[p][o] = a * (1 - fv) + b * fv;
+        }
+      }
+    }
+    return { rs, x1, y1, rw, rh };
+  }
+  function accumulateNormalTile(acc, wsum, w, h, t, samp, feather) {
+    const { rs, x1, y1, rw, rh } = samp;
+    for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) {
+      const X = x + x1, Y = y + y1, i = Y * w + X, o = y * rw + x, wt = featherW(t, X, Y, w, h, feather) + 1e-6;
+      acc[0][i] += wt * rs[0][o]; acc[1][i] += wt * rs[1][o]; acc[2][i] += wt * rs[2][o]; wsum[i] += wt;
+      for (let p = 3; p < rs.length && p < acc.length; p++) acc[p][i] += wt * rs[p][o];
+    }
+  }
+  function detailTransfer(I, p, w, h, rFit = 6, rHi = 2, k = 1, eps = 2e-4) {
+    const N = w * h, II = new Float32Array(N), Ip = new Float32Array(N); for (let i = 0; i < N; i++) { II[i] = I[i] * I[i]; Ip[i] = I[i] * p[i]; }
+    const mI = boxMean(I, w, h, rFit), mp = boxMean(p, w, h, rFit), mII = boxMean(II, w, h, rFit), mIp = boxMean(Ip, w, h, rFit), A = new Float32Array(N);
+    for (let i = 0; i < N; i++) { const v = mII[i] - mI[i] * mI[i], c = mIp[i] - mI[i] * mp[i]; A[i] = c / (v + eps); }
+    const mA = boxMean(A, w, h, rFit), lo = boxMean(boxMean(I, w, h, rHi), w, h, rHi), q = new Float32Array(N);
+    for (let i = 0; i < N; i++) q[i] = p[i] + k * mA[i] * (I[i] - lo[i]); return q;
+  }
+  function renormNormals(n) {
+    const a = n[0], b = n[1], c = n[2];
+    for (let i = 0; i < a.length; i++) { const l = Math.hypot(a[i], b[i], c[i]) || 1; a[i] /= l; b[i] /= l; c[i] /= l; }
+    return n;
+  }
+  function toHalf(v) {
+    f32[0] = v; const x = u32[0];
+    const sign = (x >>> 16) & 0x8000; let e = ((x >>> 23) & 0xff) - 127 + 15; let m = x & 0x7fffff;
+    if (e <= 0) { if (e < -10) return sign; m = (m | 0x800000) >> (1 - e); return sign | ((m + 0x1000) >> 13); }
+    if (e >= 31) return sign | 0x7c00;
+    const hv = sign | (e << 10) | ((m + 0x1000) >> 13);
+    return hv;
+  }
+  function fromHalf(hv) {
+    const s = hv & 0x8000 ? -1 : 1, e = (hv >> 10) & 0x1f, m = hv & 0x3ff;
+    if (e === 0) return s * m * 5.960464477539063e-8;
+    if (e === 31) return m ? NaN : s * Infinity;
+    return s * (1 + m / 1024) * Math.pow(2, e - 15);
+  }
+  function zipList(u8) {
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength); let e = u8.length - 22;
+    while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+    if (e < 0) throw new Error('not a zip file');
+    const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true); const out = [], dec = new TextDecoder();
+    for (let k = 0; k < n; k++) {
+      const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), size = dv.getUint32(p + 24, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lo = dv.getUint32(p + 42, true);
+      const name = dec.decode(u8.subarray(p + 46, p + 46 + nl));
+      const lnl = dv.getUint16(lo + 26, true), lxl = dv.getUint16(lo + 28, true), ds = lo + 30 + lnl + lxl;
+      out.push({ name, method, size, data: u8.subarray(ds, ds + csize) });
+      p += 46 + nl + xl + cl;
+    }
+    return out;
+  }
+  async function inflate(data, raw) {
+    if (typeof DecompressionStream !== 'undefined') {
+      const ds = new DecompressionStream(raw ? 'deflate-raw' : 'deflate');
+      return new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(ds)).arrayBuffer());
+    }
+    const zlib = await import('node:zlib'); return new Uint8Array(raw ? zlib.inflateRawSync(data) : zlib.inflateSync(data));
+  }
+  function resample(src, sw, sh, dw, dh) {   // bilinear
+    if (sw === dw && sh === dh) return Float32Array.from(src);
+    const o = new Float32Array(dw * dh);
+    for (let y = 0; y < dh; y++) { const fy = Math.min(sh - 1, Math.max(0, (y + 0.5) * sh / dh - 0.5)), y0 = Math.floor(fy), y1 = Math.min(sh - 1, y0 + 1), ty = fy - y0;
+      for (let x = 0; x < dw; x++) { const fx = Math.min(sw - 1, Math.max(0, (x + 0.5) * sw / dw - 0.5)), x0 = Math.floor(fx), x1 = Math.min(sw - 1, x0 + 1), tx = fx - x0;
+        o[y * dw + x] = (src[y0 * sw + x0] * (1 - tx) + src[y0 * sw + x1] * tx) * (1 - ty) + (src[y1 * sw + x0] * (1 - tx) + src[y1 * sw + x1] * tx) * ty; } }
+    return o;
+  }
+  function gridDetect(a, w, h, B = 256) {
+    const lo = blur(a, w, h, 6), b = new Float32Array(w * h); for (let i = 0; i < b.length; i++) b[i] = a[i] - lo[i];
+    const Ts = []; for (let T = 6; T <= 48; T += 0.05) Ts.push(T);
+    const sc = new Float64Array(Ts.length), cs = Ts.map(T => { const c = new Float64Array(B), s = new Float64Array(B); for (let k = 0; k < B; k++) { c[k] = Math.cos(2 * Math.PI * k / T); s[k] = Math.sin(2 * Math.PI * k / T); } return [c, s]; });
+    const ry = new Float64Array(B), rx = new Float64Array(B); let nb = 0;
+    for (let y0 = 0; y0 + B <= h; y0 += B) for (let x0 = 0; x0 + B <= w; x0 += B) {
+      ry.fill(0); rx.fill(0); nb++;
+      for (let y = 0; y < B; y++) for (let x = 0; x < B; x++) { const v = b[(y0 + y) * w + x0 + x]; ry[y] += v; rx[x] += v; }
+      for (let t = 0; t < Ts.length; t++) { const [c, s] = cs[t]; let a1 = 0, b1 = 0, a2 = 0, b2 = 0;
+        for (let k = 0; k < B; k++) { a1 += ry[k] * c[k]; b1 += ry[k] * s[k]; a2 += rx[k] * c[k]; b2 += rx[k] * s[k]; }
+        sc[t] += Math.hypot(a1, b1) + Math.hypot(a2, b2); }
+    }
+    if (!nb) return null;
+    let best = 0, mean = 0; for (let t = 0; t < Ts.length; t++) { mean += sc[t]; if (sc[t] > sc[best]) best = t; } mean /= Ts.length;
+    // a strong harmonic can outscore the fundamental: prefer 2T or 3T when it is nearly as strong (its template contains T's)
+    let T = Ts[best]; for (const m of [3, 2]) { const t2 = Math.round((T * m - 6) / 0.05); if (t2 < Ts.length) { let mx = 0, at = t2; for (let q = Math.max(0, t2 - 4); q <= Math.min(Ts.length - 1, t2 + 4); q++) if (sc[q] > mx) { mx = sc[q]; at = q; } if (mx > 0.6 * sc[best] && mx / mean > 1.7) { T = Ts[at]; break; } } }
+    return { T, strength: sc[best] / mean, hp: b };
+  }
+  function gridClean(nx, ny, nz, w, h, minStrength = 1.7) {
+    if (w < 256 || h < 256) return null;
+    const dy = gridDetect(ny, w, h), dx = gridDetect(nx, w, h);
+    const d = (dy && (!dx || dy.strength >= dx.strength)) ? dy : dx; if (!d || d.strength < minStrength) return null;
+    const T = d.T, nb = Math.max(8, Math.round(T * 2)), B = 256, st = B / 2, N = w * h;
+    const nzs = blur(nz, w, h, 3), flat = new Uint8Array(N); for (let i = 0; i < N; i++) flat[i] = nzs[i] > 0.97 ? 1 : 0;
+    const bx = new Int32Array(w), by = new Int32Array(h);
+    for (let x = 0; x < w; x++) bx[x] = Math.floor((x % T) / T * nb) % nb; for (let y = 0; y < h; y++) by[y] = Math.floor((y % T) / T * nb) % nb;
+    const han = new Float32Array(B); for (let k = 0; k < B; k++) han[k] = 0.5 - 0.5 * Math.cos(2 * Math.PI * (k + 0.5) / B) + 1e-4;
+    const out = [];
+    for (const [a, hpPre] of [[nx, dx && dx.hp], [ny, dy && dy.hp]]) {
+      let b = hpPre; if (!b) { const lo = blur(a, w, h, 6); b = new Float32Array(N); for (let i = 0; i < N; i++) b[i] = a[i] - lo[i]; }
+      const acc = new Float32Array(N), ws = new Float32Array(N), s = new Float64Array(nb * nb), c = new Float64Array(nb * nb);
+      for (let y0 = -st; y0 < h; y0 += st) for (let x0 = -st; x0 < w; x0 += st) {
+        const ya = Math.max(0, y0), yb = Math.min(h, y0 + B), xa = Math.max(0, x0), xb = Math.min(w, x0 + B); if (ya >= yb || xa >= xb) continue;
+        s.fill(0); c.fill(0);
+        for (let y = ya; y < yb; y++) for (let x = xa; x < xb; x++) { const i = y * w + x; if (!flat[i]) continue; const k = by[y] * nb + bx[x]; s[k] += b[i]; c[k]++; }
+        for (let k = 0; k < s.length; k++) s[k] = c[k] > 8 ? s[k] / c[k] : 0;
+        for (let y = ya; y < yb; y++) { const wy = han[y - y0]; for (let x = xa; x < xb; x++) { const i = y * w + x, ww = wy * han[x - x0]; acc[i] += s[by[y] * nb + bx[x]] * ww; ws[i] += ww; } }
+      }
+      const o = new Float32Array(N); for (let i = 0; i < N; i++) o[i] = a[i] - (ws[i] > 0 ? acc[i] / ws[i] : 0);
+      out.push(o);
+    }
+    const onx = out[0], ony = out[1], onz = new Float32Array(N);
+    for (let i = 0; i < N; i++) { const z = Math.max(1e-4, nz[i]), l = Math.hypot(onx[i], ony[i], z); onx[i] /= l; ony[i] /= l; onz[i] = z / l; }
+    return { nx: onx, ny: ony, nz: onz, T, strength: d.strength };
+  }
+  return { boxSizes, boxH, boxV, blur, blurFull, boxMean, labels, tileGrid, featherW, samplePlanes, accumulateNormalTile, detailTransfer, renormNormals, toHalf, fromHalf, zipList, inflate, resample, gridDetect, gridClean };
+})();
+
+</script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const APP_VERSION = '0.5.1';
+const ORT_DIST = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/';
+const HF = 'https://huggingface.co';
+const NORMAL_MODELS = {
+  vitl: { repo: 'Ruicheng/moge-2-vitl-normal-onnx', rev: '1c02388b024dd34da413e1a934d7a941785f1460' },   // pinned (same revisions as Relief Forge),
+  vitb: { repo: 'Ruicheng/moge-2-vitb-normal-onnx', rev: '2d247a122ada42ce700fe59273cd62e076da1f32' },   // so an upstream update can't change results
+  vits: { repo: 'Ruicheng/moge-2-vits-normal-onnx', rev: 'e50ffda41565591092adea54c6ac83d6212e1e23' },
+};
+const S = { mode: 'relit', shape: 'flat', view: 'input', W: 0, H: 0, img: null, imgName: 'lithophane', lum: null, alpha: null,
+  mogeNormal: null, mogeMask: null, upNormal: null, nrmImg: null, normalSess: null, ltB: null, busy: false };
+window.__litho = S;   // for tests
+const setStatus = (el, msg, cls = '') => { const e = $(el); if (!e) return; e.textContent = msg; e.className = 'status ' + cls; };
+const tick = () => new Promise(r => setTimeout(r, 0));
+const loadImg = blob => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('could not decode image')); im.src = URL.createObjectURL(blob); });
+const num = (id, d) => { const v = +$(id).value; return Number.isFinite(v) ? v : d; };
+$('appVer').textContent = 'v' + APP_VERSION;
+
+// ---------- model cache: same database and keys as Relief Forge, so a model it downloaded is reused here ----------
+function idb() { return new Promise((res, rej) => { try { const r = indexedDB.open('relief-forge', 1); r.onupgradeneeded = () => r.result.createObjectStore('m'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }); }
+async function cacheGet(k) { try { const db = await idb(); return await new Promise(res => { const q = db.transaction('m').objectStore('m').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch { return null; } }
+async function cachePut(k, v) { try { const db = await idb(); await new Promise(res => { const t = db.transaction('m', 'readwrite'); t.objectStore('m').put(v, k); t.oncomplete = res; t.onerror = res; t.onabort = res; }); return true; } catch { return false; } }
+async function cacheDel(k) { try { const db = await idb(); await new Promise(res => { const t = db.transaction('m', 'readwrite'); t.objectStore('m').delete(k); t.oncomplete = res; t.onerror = res; t.onabort = res; }); return true; } catch { return false; } }
+async function listRepo(repo, rev = 'main') {
+  const ck = 'list:' + repo + (rev === 'main' ? '' : '@' + rev), cached = await cacheGet(ck);
+  try {
+    const r = await fetch(`${HF}/api/models/${repo}/tree/${rev}?recursive=true`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json(); const files = j.filter(f => f.type === 'file').map(f => ({ path: f.path, size: f.size || (f.lfs && f.lfs.size) || 0 }));
+    cachePut(ck, files); return files;
+  } catch (e) { if (cached) return cached; throw new Error('could not list ' + repo + ' (' + e.message + ')'); }
+}
+function pickFiles(files, prefer) {
+  const onnx = files.filter(f => /\.onnx$/i.test(f.path));
+  if (!onnx.length) throw new Error('no .onnx in repo');
+  let main = prefer ? onnx.find(f => f.path.endsWith(prefer)) : null;
+  main = main || onnx.find(f => /(^|\/)model\.onnx$/i.test(f.path)) || onnx.slice().sort((a, b) => a.path.length - b.path.length)[0];
+  const base = main.path.split('/').pop(), dir = main.path.slice(0, main.path.length - base.length), stem = base.replace(/\.onnx$/i, '');
+  const ext = files.filter(f => f !== main && f.path.startsWith(dir) && !/\.onnx$/i.test(f.path) && f.path.slice(dir.length).startsWith(stem) && /(data|_data|\.bin|\.weight)$/i.test(f.path));
+  return { main, ext };
+}
+// same as Relief Forge: want = the pinned file's exact size; an unpinned copy cached by an older version is moved only if it matches
+async function fetchCached(url, label, prog, stat, done0, total, oldUrl, want) {
+  let blob = await cacheGet(url);
+  if (blob && want && blob.size !== want) { await cacheDel(url); blob = null; }
+  if (blob) return blob;
+  if (oldUrl && oldUrl !== url && (blob = await cacheGet(oldUrl))) {
+    if (!want || blob.size === want) {
+      setStatus(stat, 'Updating the cache for ' + label + '…'); await cachePut(url, blob);
+      const chk = await cacheGet(url); if (!chk || chk.size !== blob.size) return blob;
+      await cacheDel(oldUrl); return chk;
+    }
+    await cacheDel(oldUrl); blob = null;
+  }
+  const r = await fetch(url); if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + label);
+  const rd = r.body.getReader(), chunks = []; let got = 0;
+  for (;;) { const { done, value } = await rd.read(); if (done) break; chunks.push(value); got += value.length;
+    $(prog).value = (done0 + got) / total; setStatus(stat, `Downloading ${label}… ${((done0 + got) / 1e6).toFixed(0)} / ${(total / 1e6).toFixed(0)} MB`); }
+  blob = new Blob(chunks); chunks.length = 0;
+  setStatus(stat, 'Caching ' + label + '…'); await cachePut(url, blob);
+  return blob;
+}
+async function makeSession(model, external) {
+  ort.env.wasm.wasmPaths = ORT_DIST; ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(8, navigator.hardwareConcurrency || 4) : 1;
+  const opts = ep => ({ executionProviders: [ep], graphOptimizationLevel: 'all', ...(external.length ? { externalData: external } : {}) });
+  let sess = null, ep = '';
+  if (navigator.gpu) { try { sess = await ort.InferenceSession.create(model, opts('webgpu')); ep = 'webgpu'; }
+    catch (e) { console.warn('webgpu failed', e); setStatus('statNormal', 'WebGPU session failed, using CPU: ' + String(e.message || e).slice(0, 300), 'err'); } }
+  if (!sess) { sess = await ort.InferenceSession.create(model, opts('wasm')); ep = 'wasm (CPU – slow)'; }
+  sess.__ep = ep; $('epNormal').textContent = ep; return sess;
+}
+const mkTensor = (type, data, dims) => new ort.Tensor(type, data, dims);
+async function setSession(sess) { if (S.normalSess) { try { await S.normalSess.release(); } catch {} } S.normalSess = sess; updateButtons(); }
+async function loadNormalModel() {
+  const cfg = NORMAL_MODELS[$('normalSel').value], stat = 'statNormal', prog = 'progNormal';
+  $('btnLoadNormal').disabled = true;
+  try {
+    setStatus(stat, 'Listing ' + cfg.repo + '…'); const { main, ext } = pickFiles(await listRepo(cfg.repo, cfg.rev));
+    const all = [main, ...ext], total = all.reduce((a, f) => a + (f.size || 0), 0) || 1;
+    $(prog).hidden = false; let done = 0; const blobs = [];
+    for (const f of all) { const b = await fetchCached(`${HF}/${cfg.repo}/resolve/${cfg.rev}/${f.path}`, f.path.split('/').pop(), prog, stat, done, total, `${HF}/${cfg.repo}/resolve/main/${f.path}`, f.size || 0); blobs.push(b); done += b.size; }
+    $(prog).hidden = true;
+    setStatus(stat, 'Building inference session (first run can take a minute)…'); await tick();
+    const model = new Uint8Array(await blobs[0].arrayBuffer()), external = [];
+    for (let i = 1; i < all.length; i++) external.push({ path: all[i].path.split('/').pop(), data: new Uint8Array(await blobs[i].arrayBuffer()) });
+    await setSession(await makeSession(model, external));
+    setStatus(stat, `Ready · ${all.map(f => f.path.split('/').pop()).join(' + ')}`, 'ok');
+  } catch (e) { console.error(e);
+    setStatus(stat, 'Load failed: ' + (e.message || e) + '. If downloads are blocked, get the files from Hugging Face and use “From disk…” (select the .onnx and any data file together).', 'err');
+  } finally { $('btnLoadNormal').disabled = false; $(prog).hidden = true; }
+}
+async function loadNormalLocal(fileList) {
+  try { const files = [...fileList], main = files.find(f => /\.onnx$/i.test(f.name)); if (!main) throw new Error('select an .onnx file');
+    setStatus('statNormal', 'Reading files…');
+    const model = new Uint8Array(await main.arrayBuffer()), external = [];
+    for (const f of files) if (f !== main) external.push({ path: f.name, data: new Uint8Array(await f.arrayBuffer()) });
+    setStatus('statNormal', 'Building inference session…'); await tick();
+    await setSession(await makeSession(model, external));
+    setStatus('statNormal', 'Ready · ' + files.map(f => f.name).join(' + '), 'ok');
+  } catch (e) { console.error(e); setStatus('statNormal', 'Load failed: ' + (e.message || e), 'err'); }
+}
+
+// ---------- MoGe-2 normals: the same calls, tiling and averaging as Relief Forge ----------
+const HALF = new Float32Array(65536); for (let i = 0; i < 65536; i++) HALF[i] = Core.fromHalf(i);
+const toF32 = d => { if (d instanceof Float32Array) return d; if (d instanceof Uint16Array) { const o = new Float32Array(d.length); for (let i = 0; i < d.length; i++) o[i] = HALF[d[i]]; return o; } return Float32Array.from(d); };
+const cvs = document.createElement('canvas'); const cctx = cvs.getContext('2d', { willReadFrequently: true });
+function grabRegion(t, RW, RH, flip) {
+  cvs.width = RW; cvs.height = RH;
+  const TW = t.TW || t.T, TH = t.TH || t.T, sc = S.img.naturalWidth / S.W;
+  cctx.fillStyle = S.meanColor; cctx.fillRect(0, 0, RW, RH);
+  const rx1 = Math.max(0, t.x0), ry1 = Math.max(0, t.y0), rx2 = Math.min(S.W, t.x0 + TW), ry2 = Math.min(S.H, t.y0 + TH);
+  const kx = RW / TW, ky = RH / TH;
+  cctx.imageSmoothingEnabled = true; cctx.imageSmoothingQuality = 'high';
+  cctx.save(); if (flip) { cctx.translate(RW, 0); cctx.scale(-1, 1); }
+  cctx.drawImage(S.img, rx1 * sc, ry1 * sc, (rx2 - rx1) * sc, (ry2 - ry1) * sc, (rx1 - t.x0) * kx, (ry1 - t.y0) * ky, (rx2 - rx1) * kx, (ry2 - ry1) * ky);
+  cctx.restore();
+  return cctx.getImageData(0, 0, RW, RH).data;
+}
+const flipPlane = (a, W, H) => { for (let y = 0; y < H; y++) { const o = y * W; for (let x = 0; x < W >> 1; x++) { const v = a[o + x]; a[o + x] = a[o + W - 1 - x]; a[o + W - 1 - x] = v; } } };
+const isSizeErr = e => /SafeInt|overflow|out of memory|memory access|Aborted|RangeError|allocation/i.test(String(e && (e.message || e)));
+let mogeImgType = 'float32';
+async function normalRegion(t, RW, RH, flip) {
+  const d = grabRegion(t, RW, RH, flip), n = RW * RH, s = S.normalSess;
+  const mk = type => { if (type === 'float16') { const a = new Uint16Array(3 * n); for (let i = 0; i < n; i++) for (let c = 0; c < 3; c++) a[c * n + i] = Core.toHalf(d[i * 4 + c] / 255); return mkTensor('float16', a, [1, 3, RH, RW]); }
+    const a = new Float32Array(3 * n); for (let i = 0; i < n; i++) for (let c = 0; c < 3; c++) a[c * n + i] = d[i * 4 + c] / 255; return mkTensor('float32', a, [1, 3, RH, RW]); };
+  const feeds = {}, imgName = s.inputNames.find(x => /image|pixel|input/i.test(x)) || s.inputNames[0];
+  const tokName = s.inputNames.find(x => /token/i.test(x));
+  if (tokName) feeds[tokName] = mkTensor('int64', BigInt64Array.from([BigInt(S.tokOverride || +$('nTok').value)]), []);
+  let res;
+  try { feeds[imgName] = mk(mogeImgType); res = await s.run(feeds); }
+  catch (e) { if (/float16|type/i.test(String(e.message || e))) { mogeImgType = mogeImgType === 'float32' ? 'float16' : 'float32'; feeds[imgName] = mk(mogeImgType); res = await s.run(feeds); } else throw e; }
+  const outName = s.outputNames.find(x => /normal/i.test(x)) || s.outputNames[1] || s.outputNames[0];
+  const ot = res[outName], dims = ot.dims, raw = toF32(ot.data);
+  const mName = s.outputNames.find(x => /mask/i.test(x)); let mOut = null;
+  if (mName && res[mName] && res[mName].data.length === RW * RH) mOut = Float32Array.from(toF32(res[mName].data));
+  for (const k in res) { try { res[k].dispose(); } catch {} }
+  const nx = new Float32Array(n), ny = new Float32Array(n), nz = new Float32Array(n);
+  const chLast = dims[dims.length - 1] === 3;
+  for (let i = 0; i < n; i++) {
+    const a = chLast ? raw[i * 3] : raw[i], b = chLast ? raw[i * 3 + 1] : raw[n + i], c = chLast ? raw[i * 3 + 2] : raw[2 * n + i];
+    nx[i] = a; ny[i] = b; nz[i] = -c;      // OpenCV -> internal (z toward viewer)
+  }
+  if (flip) { flipPlane(nx, RW, RH); flipPlane(ny, RW, RH); flipPlane(nz, RW, RH); for (let i = 0; i < n; i++) nx[i] = -nx[i]; if (mOut) flipPlane(mOut, RW, RH); }
+  return mOut ? [nx, ny, nz, mOut] : [nx, ny, nz];
+}
+async function normalTTA(t, RW, RH) {
+  const tok0 = +$('nTok').value, ladder = [3600, 2500, 1800, 1200, 800].filter(v => v <= tok0);
+  for (let k = 0; k < ladder.length; k++) {
+    try { S.tokOverride = ladder[k]; return await normalTTA0(t, RW, RH); }
+    catch (e) { if (!isSizeErr(e) || k === ladder.length - 1) throw e;
+      setStatus('runStatus', `Normal @${ladder[k]} tokens too large for ${S.normalSess.__ep}, retrying @${ladder[k + 1]}…`, 'err'); await tick(); }
+  }
+}
+async function normalTTA0(t, RW, RH) {
+  const a = await normalRegion(t, RW, RH, false); if (!$('tta').checked) return a;
+  const b = await normalRegion(t, RW, RH, true); for (let p = 0; p < 3; p++) for (let i = 0; i < a[p].length; i++) a[p][i] += b[p][i];
+  if (a[3] && b[3]) for (let i = 0; i < a[3].length; i++) a[3][i] = 0.5 * (a[3][i] + b[3][i]);
+  Core.renormNormals(a); return a;
+}
+async function runNormals() {
+  if (!S.normalSess || !S.img || S.busy) return;
+  S.busy = true; S.cancel = false; updateButtons(); $('btnCancel').hidden = false;
+  const pr = $('runProg'); pr.hidden = false; pr.value = 0; const t0 = performance.now();
+  const chk = () => { if (S.cancel) throw new Error('cancelled'); };
+  try {
+    setupWorking();
+    const W = S.W, H = S.H, N = W * H, MQ = $('maxQ').checked, nT = +$('nTiles').value, FE = MQ ? 0.33 : 0.3;
+    const nTiles = nT ? Core.tileGrid(W, H, nT, 0.33) : [], steps = nTiles.length || 1; let done = 0;
+    const step = () => { done++; pr.value = done / steps; };
+    S.mogeNormal = null; S.mogeMask = null;
+    const L = 14 * Math.round(Math.sqrt(+$('nTok').value) * 1.0) * 1.15 | 0;
+    let nrm;
+    if (!nTiles.length) {
+      const k = Math.min(1, L * 1.2 / Math.max(W, H)), RW = Math.round(W * k / 2) * 2, RH = Math.round(H * k / 2) * 2;
+      setStatus('runStatus', `Normal pass ${RW}×${RH}…`); await tick(); chk();
+      const t = { x0: 0, y0: 0, TW: W, TH: H }, o = await normalTTA(t, RW, RH);
+      const smp = Core.samplePlanes(o, RW, RH, t, W, H); S.mogeMask = smp.rs[3] || null; nrm = Core.renormNormals(smp.rs.slice(0, 3));
+      if (MQ) {
+        chk(); setStatus('runStatus', `Normal pass ${RW}×${RH} (shifted)…`); await tick();
+        const sx = Math.max(1, Math.round(7 * W / RW)), sy = Math.max(1, Math.round(7 * H / RH)), t2 = { x0: sx, y0: sy, TW: W, TH: H }, o2 = await normalTTA(t2, RW, RH), s2 = Core.samplePlanes(o2, RW, RH, t2, W, H);
+        for (let p = 0; p < 3; p++) { const a = nrm[p], b = s2.rs[p]; for (let y = s2.y1; y < s2.y1 + s2.rh; y++) for (let x = s2.x1; x < s2.x1 + s2.rw; x++) a[y * W + x] += b[(y - s2.y1) * s2.rw + (x - s2.x1)]; }
+        Core.renormNormals(nrm); }
+      step();
+    } else {
+      const acc = [new Float32Array(N), new Float32Array(N), new Float32Array(N), new Float32Array(N)], ws = new Float32Array(N); let hasM = false;
+      const R = Math.min(1036, Math.max(518, L));
+      for (let i = 0; i < nTiles.length; i++) {
+        chk(); setStatus('runStatus', `Normal tile ${i + 1}/${nTiles.length} @${R}…`); await tick();
+        const o = await normalTTA(nTiles[i], R, R); hasM = hasM || !!o[3];
+        Core.accumulateNormalTile(acc, ws, W, H, nTiles[i], Core.samplePlanes(o, R, R, nTiles[i], W, H), FE);
+        if (MQ) {
+          chk(); setStatus('runStatus', `Normal tile ${i + 1}/${nTiles.length} @${R} (shifted)…`); await tick();
+          const sh = Math.max(1, Math.round(7 * nTiles[i].T / R)), t2 = { ...nTiles[i], x0: nTiles[i].x0 + sh, y0: nTiles[i].y0 + sh };
+          const o2 = await normalTTA(t2, R, R); Core.accumulateNormalTile(acc, ws, W, H, t2, Core.samplePlanes(o2, R, R, t2, W, H), FE); }
+        step();
+      }
+      S.mogeMask = hasM ? Float32Array.from(acc[3], (v, i) => ws[i] > 0 ? v / ws[i] : 0) : null;
+      nrm = Core.renormNormals(acc.slice(0, 3));
+    }
+    S.mogeNormal = { nx: nrm[0], ny: nrm[1], nz: nrm[2] }; S.nrmFrom = 'model';
+    setStatus('runStatus', `Done in ${((performance.now() - t0) / 1000).toFixed(1)} s · ${W}×${H}${$('tta').checked ? ' · flip averaged' : ''}${MQ ? ' · max quality' : ''}`, 'ok');
+    normalsChanged();
+  } catch (e) { if (e.message !== 'cancelled') console.error(e); setStatus('runStatus', e.message === 'cancelled' ? 'Cancelled.' : 'Error: ' + (e.message || e), 'err'); }
+  finally { S.busy = false; pr.hidden = true; $('btnCancel').hidden = true; updateButtons(); }
+}
+
+// ---------- picture ----------
+function setupWorking() {
+  const iw = S.img.naturalWidth, ih = S.img.naturalHeight, L = +$('workRes').value, s = L / Math.max(iw, ih);
+  const W0 = S.W, H0 = S.H;
+  S.W = Math.max(2, Math.round(iw * s / 2) * 2); S.H = Math.max(2, Math.round(ih * s / 2) * 2);
+  const c = document.createElement('canvas'); c.width = S.W; c.height = S.H;
+  const x = c.getContext('2d', { willReadFrequently: true }); x.imageSmoothingQuality = 'high'; x.drawImage(S.img, 0, 0, S.W, S.H);
+  const d = x.getImageData(0, 0, S.W, S.H).data, N = S.W * S.H, lum = new Float32Array(N); let r = 0, g = 0, b = 0;
+  for (let i = 0; i < N; i++) { lum[i] = (0.2126 * d[i * 4] + 0.7152 * d[i * 4 + 1] + 0.0722 * d[i * 4 + 2]) / 255; r += d[i * 4]; g += d[i * 4 + 1]; b += d[i * 4 + 2]; }
+  S.lum = lum; S.meanColor = `rgb(${r / N | 0},${g / N | 0},${b / N | 0})`;
+  let tr = 0; const al = new Float32Array(N); for (let i = 0; i < N; i++) { al[i] = d[i * 4 + 3] / 255; tr += al[i] < 0.5 ? 1 : 0; }
+  S.alpha = tr > N * 0.005 ? al : null;
+  // maps made at another working size follow it
+  if (W0 && (W0 !== S.W || H0 !== S.H)) {
+    const rs = a => a && Core.resample(a, W0, H0, S.W, S.H);
+    if (S.mogeNormal) { const n = S.mogeNormal, o = [rs(n.nx), rs(n.ny), rs(n.nz)]; Core.renormNormals(o); S.mogeNormal = { nx: o[0], ny: o[1], nz: o[2] }; }
+    S.mogeMask = rs(S.mogeMask);
+  }
+  S.gcCache = S.eaCache = null; S.ltB = null;
+  prepUploadNormal();
+}
+function prepUploadNormal() {
+  S.upNormal = null; if (!S.nrmImg || !S.W) return;
+  const c = document.createElement('canvas'); c.width = S.W; c.height = S.H;
+  const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(S.nrmImg, 0, 0, S.W, S.H);
+  const d = x.getImageData(0, 0, S.W, S.H).data, N = S.W * S.H, dx = $('nrmConv').value === 'dx';
+  const nx = new Float32Array(N), ny = new Float32Array(N), nz = new Float32Array(N);
+  const sx = $('upFlipX').checked ? -1 : 1;
+  for (let i = 0; i < N; i++) { nx[i] = sx * (d[i * 4] / 127.5 - 1); const g = d[i * 4 + 1] / 127.5 - 1; ny[i] = dx ? g : -g; nz[i] = d[i * 4 + 2] / 127.5 - 1; }
+  S.upNormal = { nx, ny, nz };
+}
+async function onImage(file) {
+  try { S.img = await loadImg(file); } catch (e) { setStatus('picStatus', 'Could not read that picture.', 'err'); return; }
+  S.imgName = (file.name || 'lithophane').replace(/\.[^.]+$/, ''); S.W = S.H = 0; S.autoShown = false;
+  S.mogeNormal = S.mogeMask = null; S.nrmImg = null; S.upNormal = null; $('btnClrNrm').hidden = true;
+  setupWorking();
+  setStatus('picStatus', `${file.name} · ${S.img.naturalWidth}×${S.img.naturalHeight}${S.alpha ? ' · has transparency' : ''}`, 'ok');
+  if (S.alpha && $('ltBg').value === 'keep') $('ltBg').value = 'dark';   // a cut-out picture: its background goes dark unless you say otherwise
+  if (S.mode === 'relit' && !S.normalSess) setStatus('runStatus', 'Load the normal model above, then press Make normals. Or switch to Photo (classic), which needs no model.');
+  setView('input'); normalsChanged();
+}
+function dq16(u8, lo, hi) { const u = new Uint16Array(u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength)), o = new Float32Array(u.length), r = hi - lo; for (let i = 0; i < u.length; i++) o[i] = lo + u[i] / 65535 * r; return o; }
+async function openProject(file) {   // a Relief Forge project: its picture and AI normals, no model needed
+  try {
+    setStatus('picStatus', 'Reading project…'); await tick();
+    const L = Core.zipList(new Uint8Array(await file.arrayBuffer()));
+    const get = async nm => { const e = L.find(x => x.name === nm); if (!e) return null; return e.method === 8 ? await Core.inflate(e.data, true) : e.data; };
+    const J = JSON.parse(new TextDecoder().decode(await get('project.json') || new Uint8Array()));
+    if (J.app !== 'relief-forge') throw new Error('not a Relief Forge project');
+    const asFile = async key => { const nm = J.files && J.files[key]; if (!nm) return null; const u = await get(nm); return u ? new File([u], nm, { type: 'image/' + (nm.split('.').pop() === 'jpg' ? 'jpeg' : nm.split('.').pop()) }) : null; };
+    const imgF = await asFile('image'); if (!imgF) throw new Error('project has no image');
+    S.img = await loadImg(imgF); S.imgName = J.imgName || file.name.replace(/\.[^.]+$/, ''); S.autoShown = false;
+    const nf = await asFile('normal_upload'); S.nrmImg = nf ? await loadImg(nf) : null; $('btnClrNrm').hidden = !S.nrmImg;
+    if (J.settings && J.settings.ui && J.settings.ui.workRes && [...$('workRes').options].some(o => o.value == J.settings.ui.workRes)) $('workRes').value = J.settings.ui.workRes;
+    S.W = S.H = 0; S.mogeNormal = S.mogeMask = null; setupWorking();
+    const map = async key => { const m = J.maps && J.maps[key]; if (!m) return null; const u = await get('maps/' + key + '.u16'); if (!u) return null;
+      const a = dq16(u, m.lo, m.hi); return (J.W === S.W && J.H === S.H) ? a : Core.resample(a, J.W, J.H, S.W, S.H); };
+    const nx = await map('nx'), ny = await map('ny'), nz = await map('nz');
+    S.mogeNormal = nx && ny && nz ? (Core.renormNormals([nx, ny, nz]), { nx, ny, nz }) : null; S.nrmFrom = 'project';
+    S.mogeMask = await map('mogeMask');
+    // the project's own settings for the normal clean-ups
+    const ui = (J.settings && J.settings.ui) || {};
+    if (ui.gridNrm != null) $('gridNrm').checked = !!ui.gridNrm; if (ui.edgeNrm != null) $('edgeNrm').checked = !!ui.edgeNrm; if (ui.edgeAmt != null) $('edgeAmt').value = ui.edgeAmt;
+    if (S.alpha && $('ltBg').value === 'keep') $('ltBg').value = 'dark';
+    setStatus('picStatus', `Opened ${file.name} · ${S.W}×${S.H} · ${S.mogeNormal ? 'AI normals included' : S.nrmImg ? 'uploaded normal map included' : 'no normals in it'}`, S.mogeNormal || S.nrmImg ? 'ok' : 'err');
+    setMode(S.mogeNormal || S.nrmImg ? 'relit' : S.mode);
+    setView('input'); normalsChanged();
+  } catch (e) { console.error(e); setStatus('picStatus', 'Could not open it: ' + (e.message || e), 'err'); }
+}
+
+// ---------- normals in use (as Relief Forge: grid clean-up, then optional fine detail from the picture) ----------
+function rawNormal() { if (S.upNormal && (!S.mogeNormal || S.nrmPref === 'upload')) return S.upNormal; return S.mogeNormal; }
+function activeNormal0() {
+  const n = rawNormal(); if (!n) return n;
+  const el = $('gridNrm'); if (!el || !el.checked || n.nx.length !== S.W * S.H) { $('gridInfo').textContent = ''; return n; }
+  let fp = 0; const st = Math.max(1, Math.floor(n.nx.length / 97)); for (let i = 0; i < n.nx.length; i += st) fp += n.nx[i] * 1.7 + n.ny[i] * 2.3;
+  const c = S.gcCache; if (c && c.src === n && c.fp === fp) return c.out || n;
+  const r = Core.gridClean(n.nx, n.ny, n.nz, S.W, S.H);
+  S.gcCache = { src: n, fp, out: r ? { nx: r.nx, ny: r.ny, nz: r.nz } : null };
+  $('gridInfo').textContent = r ? `(grid ${r.T.toFixed(1)} px removed)` : '(none found)';
+  return S.gcCache.out || n;
+}
+function activeNormal() {
+  const n = activeNormal0(); if (!n || !$('edgeNrm').checked || !S.lum || n.nx.length !== S.lum.length) return n;
+  const k = +$('edgeAmt').value || 1, c = S.eaCache; if (c && c.src === n && c.lum === S.lum && c.k === k) return c.out;
+  const t0 = performance.now(), o = [n.nx, n.ny].map(c => Core.detailTransfer(S.lum, c, S.W, S.H, 6, 2, k));
+  const z = new Float32Array(n.nz.length); for (let i = 0; i < z.length; i++) z[i] = n.nz[i] / Math.max(1e-3, Math.hypot(n.nx[i], n.ny[i], n.nz[i])); o.push(z); Core.renormNormals(o);
+  S.eaCache = { src: n, lum: S.lum, k, out: { nx: o[0], ny: o[1], nz: o[2] } }; $('edgeInfo').textContent = `(${((performance.now() - t0) / 1000).toFixed(1)} s)`;
+  return S.eaCache.out;
+}
+function maskSource() { if ($('ltBg').value === 'keep') return 'off'; return S.alpha ? 'alpha' : S.mogeMask && S.mode === 'relit' ? 'moge' : 'none'; }
+function currentMask() {   // hard mask as Relief Forge's (coverage above 0.02), from transparency or the AI mask
+  const src = maskSource(), N = S.W * S.H;
+  if (src === 'alpha' && S.alpha) { const M = new Uint8Array(N); for (let i = 0; i < N; i++) M[i] = Math.min(1, Math.max(0, (S.alpha[i] - 0.5) / 1 + 0.5)) > 0.02 ? 1 : 0; return M; }
+  if (src === 'moge' && S.mogeMask && S.mogeMask.length === N) { const M = new Uint8Array(N), w = 0.08; for (let i = 0; i < N; i++) { const t = Math.min(1, Math.max(0, (S.mogeMask[i] - (0.5 - w)) / (2 * w))); M[i] = t * t * (3 - 2 * t) > 0.02 ? 1 : 0; } return M; }
+  return null;
+}
+function maskNote() {
+  const src = maskSource();
+  if (src === 'none') return setStatus('maskInfo', 'Nothing to tell the background from: needs a picture with a transparent background, or AI normals (Relit), which come with an AI mask.', 'err');
+  setStatus('maskInfo', src === 'alpha' ? 'Background found from the picture\'s transparency.' : src === 'moge' ? 'Background found by the AI mask.' : '');
+}
+
+// ---------- lithophane bake: exactly Relief Forge's ----------
+const LT_TLO = 0.03;
+// light from a direction like a clock face (0° = from the top, 90° = from the right) at a height above the plate (90° = straight on)
+const ltLightVec = () => { const az = (+$('ltAz').value || 0) * Math.PI / 180, el = (+$('ltEl').value || 41) * Math.PI / 180; return [Math.sin(az) * Math.cos(el), -Math.cos(az) * Math.cos(el), Math.sin(el)]; };
+async function ltBrightness() {   // brightness 0..1 at working size: what the plate should look like with a light behind it
+  const W = S.W, H = S.H, N = W * H, M = currentMask(), b = new Float32Array(N);
+  if (S.mode === 'photo') { const L = S.lum; for (let i = 0; i < N; i++) b[i] = Math.pow(L[i], 2.2); }   // the photo's tones are gamma-coded; light through plastic is linear
+  else { const n = activeNormal(); if (!n) throw new Error('no normals yet: make them (Picture step), open a .relief project, or switch to Photo'); ltShade(n.nx, n.ny, n.nz, b);
+    const tone = (+$('ltTone').value || 0) / 100; if (tone > 0) for (let i = 0; i < N; i++) b[i] *= 1 - tone + tone * S.lum[i]; }
+  const bg = $('ltBg').value;
+  if (M && bg !== 'keep') { const v = bg === 'glow' ? 1 : 0.06; for (let i = 0; i < N; i++) { const m = Math.min(1, Math.max(0, M[i])); b[i] = m * b[i] + (1 - m) * v; } }
+  // use the full tonal range (1st–99.5th percentile)
+  const smp = []; for (let i = 0; i < N; i += 37) smp.push(b[i]); smp.sort((p, q) => p - q); const p0 = smp[Math.floor(smp.length * 0.01)], p1 = smp[Math.floor(smp.length * 0.995)] || 1;
+  const lift = +$('ltSoft').value || 0;   // shadow softness: the darkest tones are lifted a little, the rest barely change
+  const g = +$('ltGamma').value || 1, inv = $('ltInv').checked;   // extras here; at 1 / off the result is Relief Forge's exactly
+  const ct = num('ltCon', 100) / 100, br = num('ltBri', 0) / 100;
+  for (let i = 0; i < N; i++) { let v = Math.min(1, Math.max(0, (b[i] - p0) / (p1 - p0 || 1))); if (g !== 1) v = Math.pow(v, g);
+    if (ct !== 1 || br !== 0) v = Math.min(1, Math.max(0, (v - 0.5) * ct + 0.5 + br)); if (inv) v = 1 - v; b[i] = lift + (1 - lift) * v; }
+  return b;
+}
+function ltShade(nx, ny, nz, out) {   // neutral grey stone: soft ambient, diffuse, a touch of shine
+  const L = ltLightVec(), l = Math.hypot(...L), lx = L[0] / l, ly = L[1] / l, lz = L[2] / l, hl = Math.hypot(lx, ly, lz + 1), hx = lx / hl, hy = ly / hl, hz = (lz + 1) / hl;
+  for (let i = 0; i < out.length; i++) { const a = nx[i], c = ny[i], z = nz[i], k = Math.hypot(a, c, z) || 1, d = Math.max(0, (a * lx + c * ly + z * lz) / k), s = Math.pow(Math.max(0, (a * hx + c * hy + z * hz) / k), 40);
+    out[i] = Math.min(1, 0.12 + 0.88 * d + 0.18 * s); }
+}
+function ltPlate(b, maxCells) {   // thickness grid in mm (row 0 = top of the picture), including the frame
+  const W = S.W, H = S.H, Wmm = Math.max(20, +$('ltW').value || 100), tmin = Math.max(0.3, +$('ltTmin').value || 0.8), tmax = Math.max(tmin + 0.2, +$('ltTmax').value || 3), fr = Math.max(0, +$('ltFrame').value || 0);
+  let res = +$('ltRes').value || 0.15; let nx = Math.round(Wmm / res); if (maxCells && nx > maxCells) { nx = maxCells; res = Wmm / nx; }
+  const pxmm = Wmm / W, sm = Math.max(0, +$('ltSmooth').value || 0), sg = Math.hypot(res / pxmm / 2, sm / 2.355 / pxmm);   // area-average down to the plate grid, plus the smoothing (as a width at half height)
+  if (sg > 0.3 && b.length === W * H) { const c = S.ltBlur; if (c && c.b === b && Math.abs(c.sg - sg) < 1e-3) b = c.out; else { const o = Core.blur(b, W, H, sg); S.ltBlur = { b, sg, out: o }; b = o; } }
+  const ny = Math.max(2, Math.round(nx * H / W)), F = Math.round(fr / res), gx = nx + 2 * F, gy = ny + 2 * F, T = new Float32Array(gx * gy).fill(tmax + 0.6), lnT = Math.log(LT_TLO);
+  for (let y = 0; y < ny; y++) { const sy = Math.min(H - 1.001, (y + 0.5) * H / ny - 0.5), y0 = Math.max(0, Math.floor(sy)), fy = Math.max(0, sy - y0);
+    for (let x = 0; x < nx; x++) { const sx = Math.min(W - 1.001, (x + 0.5) * W / nx - 0.5), x0 = Math.max(0, Math.floor(sx)), fx = Math.max(0, sx - x0), i = y0 * W + x0;
+      const v = (b[i] * (1 - fx) + b[i + 1] * fx) * (1 - fy) + (b[i + W] * (1 - fx) + b[i + W + 1] * fx) * fy;
+      T[(y + F) * gx + x + F] = tmin + (tmax - tmin) * Math.log(LT_TLO + (1 - LT_TLO) * v) / lnT; } }   // light fades exponentially in plastic: thickness from log brightness
+  return { T, gx, gy, res, tmin, tmax, Wmm: gx * res, Hmm: gy * res };
+}
+function ltSTL(p) {   // watertight binary STL: textured top, flat back, walls, back as a fan from the centre
+  const { T, gx, gy, res } = p, X = i => i * res, Y = j => (gy - 1 - j) * res, nTop = 2 * (gx - 1) * (gy - 1), ring = 2 * (gx - 1) + 2 * (gy - 1), n = nTop + 2 * ring + ring;
+  const buf = new ArrayBuffer(84 + 50 * n), dv = new DataView(buf); new Uint8Array(buf).set(new TextEncoder().encode('Relief Forge lithophane')); dv.setUint32(80, n, true);
+  let o = 84; const cx = X(gx - 1) / 2, cy = Y(0) / 2;
+  const tri = (a, b, c, ox, oy, oz) => {   // flips the winding if the normal doesn't point the expected way
+    let ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2], nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    if (nx * ox + ny * oy + nz * oz < 0) { const t = b; b = c; c = t; nx = -nx; ny = -ny; nz = -nz; } const l = Math.hypot(nx, ny, nz) || 1;
+    dv.setFloat32(o, nx / l, true); dv.setFloat32(o + 4, ny / l, true); dv.setFloat32(o + 8, nz / l, true); o += 12;
+    for (const v of [a, b, c]) { dv.setFloat32(o, v[0], true); dv.setFloat32(o + 4, v[1], true); dv.setFloat32(o + 8, v[2], true); o += 12; } o += 2; };
+  const P = (i, j) => [X(i), Y(j), T[j * gx + i]];
+  for (let j = 0; j < gy - 1; j++) for (let i = 0; i < gx - 1; i++) { const a = P(i, j), b = P(i + 1, j), c = P(i + 1, j + 1), d = P(i, j + 1); tri(a, b, c, 0, 0, 1); tri(a, c, d, 0, 0, 1); }
+  const edge = []; for (let i = 0; i < gx - 1; i++) edge.push([i, 0, i + 1, 0, 0, 1]); for (let j = 0; j < gy - 1; j++) edge.push([gx - 1, j, gx - 1, j + 1, 1, 0]);
+  for (let i = gx - 1; i > 0; i--) edge.push([i, gy - 1, i - 1, gy - 1, 0, -1]); for (let j = gy - 1; j > 0; j--) edge.push([0, j, 0, j - 1, -1, 0]);
+  for (const [i0, j0, i1, j1, ox, oy] of edge) { const t0 = P(i0, j0), t1 = P(i1, j1), b0 = [t0[0], t0[1], 0], b1 = [t1[0], t1[1], 0];
+    tri(b0, b1, t1, ox, oy, 0); tri(b0, t1, t0, ox, oy, 0); tri([cx, cy, 0], b0, b1, 0, 0, -1); }
+  return new Blob([buf], { type: 'model/stl' });
+}
+const thickOf = (v, tmin, tmax) => tmin + (tmax - tmin) * Math.log(LT_TLO + (1 - LT_TLO) * v) / Math.log(LT_TLO);
+
+// ---------- shapes ----------
+// Every shape is a grid over its surface: u runs round / across (mm along the surface), v runs up. Each grid point has a
+// point on the smooth side, the direction the texture grows in, and a thickness. The flat rectangle is Relief Forge's plate.
+const SHAPES = {
+  flat: 'A flat plate, as in Relief Forge: textured front, flat back. Stands in a frame or on a light box.',
+  arc: 'A curved panel that stands up on its own. The light goes behind, in the curve.',
+  cyl: 'A cylinder lampshade: full round, or part way for a wall light. Add a floor or top ring for a fitting.',
+  cone: 'A tapered shade, wider at the bottom (or the top). The picture follows the slope.',
+  poly: 'A lantern with flat sides (4 = box lamp, 6 = hex). The picture runs on round the corners.',
+  sphere: 'A globe, like a moon lamp, with a hole underneath for the light that it also stands on.',
+  dome: 'A half globe that sits over a light, like a dome night light or a lamp cover.',
+  rev: 'A turned shape: vase, bell, barrel and more. Pick the profile below. The picture stretches a little where the shape is wider.',
+  heart: 'A heart-shaped plate with a frame that follows the outline.',
+  disc: 'A round plate, for window hangers or tree ornaments. Add a hanging hole.',
+};
+const FLATLIKE = new Set(['flat', 'heart', 'disc']);
+// turned shapes: radius (fraction of the widest) at heights (fraction of the height), joined by a smooth curve that doesn't overshoot
+const PROFILES = {
+  vase: [[0, 0.62], [0.12, 0.85], [0.35, 1], [0.6, 0.82], [0.82, 0.5], [0.92, 0.47], [1, 0.56]],
+  bell: [[0, 1], [0.12, 0.9], [0.3, 0.7], [0.55, 0.56], [0.8, 0.47], [1, 0.36]],
+  barrel: [[0, 0.82], [0.5, 1], [1, 0.82]],
+  hourglass: [[0, 1], [0.5, 0.62], [1, 1]],
+  tulip: [[0, 0.45], [0.25, 0.75], [0.6, 1], [0.85, 0.97], [1, 0.85]],
+  bowl: [[0, 0.5], [0.3, 0.85], [0.7, 0.98], [1, 1]],
+};
+function profileFn(pts, Hh, Rw) {   // monotone cubic (Fritsch–Carlson) → (z mm) → [r mm, dr/dz]
+  const n = pts.length, x = pts.map(p => p[0] * Hh), y = pts.map(p => p[1] * Rw), d = [], m = new Array(n).fill(0);
+  for (let i = 0; i < n - 1; i++) d.push((y[i + 1] - y[i]) / (x[i + 1] - x[i]));
+  m[0] = d[0]; m[n - 1] = d[n - 2]; for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) { if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; } const a = m[i] / d[i], b = m[i + 1] / d[i], h = a * a + b * b; if (h > 9) { const t = 3 / Math.sqrt(h); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; } }
+  return z => { let i = 0; while (i < n - 2 && z > x[i + 1]) i++; const hh = x[i + 1] - x[i], t = Math.min(1, Math.max(0, (z - x[i]) / hh)), t2 = t * t, t3 = t2 * t;
+    const r = (2 * t3 - 3 * t2 + 1) * y[i] + (t3 - 2 * t2 + t) * hh * m[i] + (-2 * t3 + 3 * t2) * y[i + 1] + (t3 - t2) * hh * m[i + 1];
+    const dr = ((6 * t2 - 6 * t) * y[i] + (3 * t2 - 4 * t + 1) * hh * m[i] + (-6 * t2 + 6 * t) * y[i + 1] + (3 * t2 - 2 * t) * hh * m[i + 1]) / hh; return [r, dr]; };
+}
+function spec(maxCells) {
+  const sh = S.shape, tmin = Math.max(0.3, num('ltTmin', 0.8)), tmax = Math.max(tmin + 0.2, num('ltTmax', 3)), TF = tmax + 0.6;
+  let res = +$('ltRes').value || 0.2; const dir = FLATLIKE.has(sh) ? 1 : ($('texSide').value === 'in' ? -1 : 1);
+  const asp = S.H / S.W, F = Math.max(0, num('ltFrame', 4));
+  const g = { sh, tmin, tmax, TF, dir, wrap: false, pole: false, extras: [] };
+  const lim = (Umm, Vmm) => { if (!maxCells) return; const B = maxCells * maxCells * 2.2; if (Vmm > 0 && (Umm / res) * (Vmm / res) > B) res = Math.sqrt(Umm * Vmm / B); if (Umm / res > maxCells * 4) res = Umm / (maxCells * 4); };   // preview: a cell budget (~600k), not a fixed width, so big shades keep their detail
+  if (sh === 'arc') {
+    const Wp = Math.max(20, num('ltW', 100)), Hp = Wp * asp, Umm = Wp + 2 * F, Vmm = Hp + 2 * F, A = Math.max(20, Math.min(300, num('arcA', 120))) * Math.PI / 180, R = Umm / A;
+    lim(Umm, Vmm); Object.assign(g, { Umm, Vmm, res, R, pic: { u0: F, u1: Umm - F, v0: F, v1: Vmm - F, fit: 'stretch' },
+      at(u, v) { const t = (u / Umm - 0.5) * A, s = Math.sin(t), c = Math.cos(t); return [R * s, -R * c, v, s, -c, 0]; },
+      light: () => [0, 0, Vmm * num('bulbH', 30) / 100] });
+  } else if (sh === 'cyl' || sh === 'cone' || sh === 'poly' || sh === 'rev') {
+    const Hh = Math.max(10, num('cylH', 120)), rT = Math.max(0, num('rimT', 4)), rB = Math.max(0, num('rimB', 6));
+    let Umm, Vmm = Hh, at, closed = true, Fs = 0, cols;
+    if (sh === 'cyl') { const R = Math.max(10, num('cylD', 80)) / 2, A = Math.max(30, Math.min(360, num('cylA', 360))) * Math.PI / 180; closed = A > 2 * Math.PI - 1e-6; Umm = R * A; if (!closed) Fs = F;
+      at = (u, v) => { const t = -Math.PI / 2 + (u / Umm - 0.5) * A, c = Math.cos(t), s = Math.sin(t); return [R * c, R * s, v, c, s, 0]; }; g.R = R; g.rRef = R; }
+    else if (sh === 'cone') { const Rb = Math.max(5, num('coneB', 110)) / 2, Rt = Math.max(2, num('coneT', 70)) / 2, L = Math.hypot(Hh, Rb - Rt), Rm = (Rb + Rt) / 2; Umm = 2 * Math.PI * Rm; Vmm = L;
+      at = (u, v) => { const t = -Math.PI / 2 + (u / Umm - 0.5) * 2 * Math.PI, c = Math.cos(t), s = Math.sin(t), r = Rb + (Rt - Rb) * v / L; return [r * c, r * s, v * Hh / L, c * Hh / L, s * Hh / L, (Rb - Rt) / L]; }; g.rRef = Rm; g.Rb = Rb; g.Rt = Rt; g.slant = L; }
+    else if (sh === 'rev') { const Rw = Math.max(10, num('revD', 110)) / 2, f = profileFn(PROFILES[$('revProf').value] || PROFILES.vase, Hh, Rw), K = 1200, zs = new Float64Array(K + 1), ss = new Float64Array(K + 1);
+      let acc = 0, rs = 0, pr = f(0); for (let k = 1; k <= K; k++) { const z = Hh * k / K, q = f(z); zs[k] = z; const dl = Math.hypot(Hh / K, q[0] - pr[0]); acc += dl; rs += dl * (q[0] + pr[0]) / 2; ss[k] = acc; pr = q; }
+      const L = acc, Rm = rs / L; Umm = 2 * Math.PI * Rm; Vmm = L;
+      const zOf = v => { let lo = 0, hi = K; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (ss[mid] <= v) lo = mid; else hi = mid; } const t = ss[hi] > ss[lo] ? (v - ss[lo]) / (ss[hi] - ss[lo]) : 0; return zs[lo] + (zs[hi] - zs[lo]) * Math.min(1, Math.max(0, t)); };
+      at = (u, v) => { const t = -Math.PI / 2 + (u / Umm - 0.5) * 2 * Math.PI, c = Math.cos(t), si = Math.sin(t), z = zOf(v), q = f(z), l = Math.hypot(1, q[1]); return [q[0] * c, q[0] * si, z, c / l, si / l, -q[1] / l]; };
+      g.rRef = Rm; g.slant = L; g.revR = [f(0)[0], Rw, f(Hh)[0]]; }
+    else { const n = Math.max(3, Math.min(12, Math.round(num('polyN', 6)))), a = Math.max(10, num('polyW', 90)) / 2, Rc = a / Math.cos(Math.PI / n), side = 2 * a * Math.tan(Math.PI / n);
+      Umm = n * side; lim(Umm, Vmm); const ns = Math.max(2, 2 * Math.round(side / res / 2)); cols = n * ns;   // even, so the corners land on grid columns with the front face centred
+      const C = m => { const t = -Math.PI / 2 - Math.PI / n + m * 2 * Math.PI / n; return [Rc * Math.cos(t), Rc * Math.sin(t)]; };
+      at = (u, v) => { const k = Math.round((((u - Umm / 2 + side / 2) % Umm + Umm) % Umm) / side * 1e6) / 1e6;   // u = middle → middle of the front face
+        const m = Math.floor(k) % n, f = k - Math.floor(k), A = C(m), B = C(m + 1);
+        const x = A[0] + (B[0] - A[0]) * f, y = A[1] + (B[1] - A[1]) * f;
+        if (f < 1e-6) { const t = -Math.PI / 2 - Math.PI / n + m * 2 * Math.PI / n, k2 = 1 / Math.cos(Math.PI / n); return [x, y, v, Math.cos(t) * k2, Math.sin(t) * k2, 0, Math.cos(t), Math.sin(t), 0]; }   // corner: mitred
+        const t = -Math.PI / 2 + m * 2 * Math.PI / n; return [x, y, v, Math.cos(t), Math.sin(t), 0]; };
+      g.n = n; g.apothem = a; g.side = side; g.rRef = a; }
+    lim(Umm, Vmm);
+    Object.assign(g, { Umm, Vmm, res, wrap: closed, at, cols, Hz: Hh, rimT: rT, rimB: rB, Fs,
+      pic: { u0: Fs, u1: Umm - Fs, v0: rB, v1: Vmm - rT, fit: $('fitMode').value, rep: Math.max(1, Math.round(num('repN', 2))), span: closed ? Math.min(360, num('spanA', 360)) / 360 * Umm : null },
+      light: () => [0, 0, Hh * num('bulbH', 30) / 100] });
+    const ring = (top) => ({ top, z: top ? Hh : 0, t: Math.max(0.8, num('plateT', 2)), hole: Math.max(1, num('holeD', 40)) / 2 });
+    if (closed && $('botFit').value === 'ring') g.extras.push(ring(false));
+    if (closed && $('topFit').value === 'ring') g.extras.push(ring(true));
+  } else if (sh === 'sphere' || sh === 'dome') {
+    const dome = sh === 'dome', R = Math.max(10, num('cylD', 80)) / 2, D = 2 * R, f0 = dome ? 0 : -Math.acos(Math.min(0.995, num('sphB', 45) / D)), top = dome ? 0 : num('sphT', 0), pole = !(top > 0), f1 = pole ? Math.PI / 2 : Math.acos(Math.min(0.995, top / D));
+    const Umm = 2 * Math.PI * R, Vmm = R * (f1 - f0), rT = pole ? 0 : Math.max(0, num('rimT', 4)), rB = Math.max(0, num('rimB', 6)); lim(Umm, Vmm);
+    Object.assign(g, { Umm, Vmm, res, wrap: true, pole, R, rimT: rT, rimB: rB, rRef: R,
+      pic: { u0: 0, u1: Umm, v0: rB, v1: Vmm - rT, fit: $('fitMode').value, rep: Math.max(1, Math.round(num('repN', 2))), span: Math.min(360, num('spanA', 360)) / 360 * Umm },
+      at(u, v) { const t = -Math.PI / 2 + (u / Umm - 0.5) * 2 * Math.PI, ph = f0 + v / R, cp = Math.cos(ph), sp = Math.sin(ph); return [R * cp * Math.cos(t), R * cp * Math.sin(t), R * sp, cp * Math.cos(t), cp * Math.sin(t), sp]; },
+      light: () => { const z0 = R * Math.sin(f0), z1 = R * Math.sin(f1); return [0, 0, z0 + (z1 - z0) * num('bulbH', 30) / 100]; } });
+    g.Hz = R * (Math.sin(f1) - Math.sin(f0)); g.dome = dome;
+    if (dome && $('botFit').value === 'ring') g.extras.push({ top: false, z: 0, t: Math.max(0.8, num('plateT', 2)), hole: Math.max(1, num('holeD', 40)) / 2 });
+  } else {   // flat outlines: rectangle with a hole, heart, disc
+    const Wd = Math.max(20, num('ltW', 100)) + (sh === 'flat' ? 2 * F : 0), hang = Math.max(0, num('hangD', 0));   // flat: width is the picture's, as in Relief Forge
+    let Hd, inside, boxH;
+    if (sh === 'heart') { boxH = Wd * 2.236 / 2.278; Hd = boxH; inside = (u, v) => { const x = (u / Wd - 0.5) * 2.278, y = -1 + v / boxH * 2.236, q = x * x + y * y - 1; return q * q * q - x * x * y * y * y <= 0; }; }
+    else if (sh === 'disc') { boxH = Wd; Hd = Wd; inside = (u, v) => Math.hypot(u - Wd / 2, v - Wd / 2) <= Wd / 2; }
+    else { boxH = (Wd - 2 * F) * asp + 2 * F; Hd = boxH; inside = () => true; }
+    let tab = null;
+    if (hang > 0) { const r = hang / 2 + 2.5, topY = sh === 'heart' ? boxH * (2 / 2.236) : boxH, cy = topY + r * (sh === 'heart' ? 0.35 : 0.45);
+      tab = { cx: Wd / 2, cy, r, h: hang / 2 }; Hd = Math.max(Hd, cy + r); }
+    lim(Wd, Hd);
+    const inS = (u, v) => { if (tab) { const d = Math.hypot(u - tab.cx, v - tab.cy); if (d <= tab.h) return false; if (d <= tab.r) return true; } return inside(u, v); };
+    Object.assign(g, { Umm: Wd, Vmm: Hd, res, inS, tab, boxH, flat: true,
+      pic: sh === 'flat' ? { u0: F, u1: Wd - F, v0: F, v1: boxH - F, fit: 'stretch' } : { u0: 0, u1: Wd, v0: 0, v1: boxH, fit: 'fill' },
+      at: (u, v) => [u, v, 0, 0, 0, 1], light: () => [Wd / 2, boxH / 2, -num('bulbD', 40)] });
+  }
+  // grid size
+  if (g.wrap) { g.nu = g.cols || Math.max(8, Math.round(g.Umm / g.res)); g.resU = g.Umm / g.nu; }
+  else { g.nu = Math.max(2, Math.round(g.Umm / g.res) + 1); g.resU = g.Umm / (g.nu - 1); }
+  g.nv = Math.max(2, Math.round(g.Vmm / g.res) + 1); g.resV = g.Vmm / (g.nv - 1);
+  return g;
+}
+// brightness sampler over the picture area (local mm, v up), with Relief Forge's area-average + smoothing blur
+function sampler(b, g) {   // brightness 0..1 at any point of the picture area (u, v in mm on the surface, v up)
+  const W = S.W, H = S.H, P = g.pic, Rw0 = P.u1 - P.u0, Rh = P.v1 - P.v0, span = P.span && P.span < Rw0 ? P.span : Rw0, uc = P.u0 + Rw0 / 2, vc = (P.v0 + P.v1) / 2;
+  const tiled = P.fit === 'tile' || P.fit === 'mirror', cw = P.fit === 'repeat' ? span / P.rep : span;
+  let sx, sy; if (P.fit === 'stretch') { sx = cw / W; sy = Rh / H; } else { const s0 = P.fit === 'fit' || tiled ? Math.min(cw / W, Rh / H) : Math.max(cw / W, Rh / H); sx = sy = s0; }
+  const ox = num('picX', 0), oy = num('picY', 0), zm = Math.max(0.1, num('picZ', 100) / 100);   // picture position (mm on the surface) and zoom
+  if (!tiled) { sx *= zm; sy *= zm; }
+  // tiles: a tile is the whole picture at Tile size; joins overlap by the blend width and cross-fade
+  let tl = null;
+  if (tiled) { const k = Math.max(0.05, num('tileS', 100) / 100) * zm, mir = P.fit === 'mirror', w = Math.max(0, num('tileBlend', 6)), wu = mir ? 0 : w, exact = $('tileExact').checked;   // mirror: flipped side to side (seamless), rows blended
+    let Tu = W * sx * k, Tv = H * sy * k, pu = Math.max(1, Tu - wu), pv = Math.max(1, Tv - w), ou, ov;
+    if (exact) { let nu = Math.max(1, Math.round(span / pu)); if (mir && g.wrap && span >= g.Umm - 1e-6 && nu % 2) nu = nu + (span / pu > nu ? 1 : -1) || 2;   // mirrored all round needs an even count
+      let nv = Math.max(1, Math.round(Rh / pv)); pu = span / nu; pv = Rh / nv; Tu = pu + wu; Tv = pv + w; ou = uc - span / 2 - wu / 2; ov = -w / 2; tl = { nu, nv }; }
+    else { ou = uc - Tu / 2; ov = Rh / 2 - Tv / 2; tl = {}; }   // one tile centred on the picture area
+    ou += ox; ov -= oy; Object.assign(tl, { Tu, Tv, pu, pv, ou, ov, w, wu, mir }); sx = Tu / W; sy = Tv / H; }
+  const pxmm = Math.sqrt(sx * sy), sm = Math.max(0, num('ltSmooth', 0.4)), sg = Math.hypot(g.res / pxmm / 2, sm / 2.355 / pxmm);
+  if (sg > 0.3) { const c = S.ltBlur; if (c && c.b === b && Math.abs(c.sg - sg) < 1e-3) b = c.out; else { const o = Core.blur(b, W, H, sg); S.ltBlur = { b, sg, out: o }; b = o; } }
+  const mode = $('aroundMode').value, plainV = $('aroundPlain').value === 'glow' ? 1 : 0, aw = Math.max(0.1, num('aroundW', 8));
+  let bB = null; if (mode === 'extend') { const sgB = Math.max(W, H) * 0.035, c = S.ltBlurB; if (c && c.b === b && c.sg === sgB) bB = c.out; else { bB = Core.blur(b, W, H, sgB); S.ltBlurB = { b, sg: sgB, out: bB }; } }
+  const px = (arr, x, y) => { const fx0 = Math.min(W - 1.001, Math.max(0, x)), fy0 = Math.min(H - 1.001, Math.max(0, y)), x0 = Math.floor(fx0), y0 = Math.floor(fy0), fx = fx0 - x0, fy = fy0 - y0, i = y0 * W + x0;
+    return (arr[i] * (1 - fx) + arr[i + 1] * fx) * (1 - fy) + (arr[i + W] * (1 - fx) + arr[i + W + 1] * fx) * fy; };
+  const axis = (t, o, p, w, T) => { const k = Math.floor((t - o) / p), l = t - o - k * p;   // → [[tile, local, weight], …]
+    if (w > 0 && l < w) { const a = l / w, s2 = a * a * (3 - 2 * a); return [[k, l, s2], [k - 1, l + p, 1 - s2]]; } return [[k, Math.min(T, l), 1]]; };
+  // the picture at a point inside its own area (du: mm from the picture's centre line, round the shape; v: mm up)
+  const inner = (arr, du, v) => {
+    if (tl) { const U = axis(uc + du, tl.ou, tl.pu, tl.wu, tl.Tu), V = axis(P.v1 - v, tl.ov, tl.pv, tl.w, tl.Tv); let acc = 0;
+      for (const [ku, lu, wu] of U) for (const [kv, lv, wv] of V) { let x = lu, y = lv; if (tl.mir && (ku & 1)) x = tl.Tu - x; acc += wu * wv * px(arr, x / tl.Tu * W - 0.5, y / tl.Tv * H - 0.5); } return acc; }
+    let d = du - ox + span / 2; if (P.fit === 'repeat') d = d - Math.floor(d / cw) * cw;
+    return px(arr, (d - cw / 2) / sx + W / 2 - 0.5, ((P.v1 - (v - oy)) - Rh / 2) / sy + H / 2 - 0.5); };
+  // where the picture actually is: its own extent (moved and zoomed), inside the picture area (and the span round the shape)
+  const whole = tl || P.fit === 'repeat', ua = whole ? -span / 2 : Math.max(-span / 2, ox - W * sx / 2), ub = whole ? span / 2 : Math.min(span / 2, ox + W * sx / 2),
+    va = whole ? vc - Rh / 2 : Math.max(vc - Rh / 2, vc + oy - H * sy / 2), vb = whole ? vc + Rh / 2 : Math.min(vc + Rh / 2, vc + oy + H * sy / 2);
+  return (u, v) => {
+    let du = u - uc; if (g.wrap) du = du - Math.round(du / g.Umm) * g.Umm;
+    const ex = Math.max(0, ua - du, du - ub), ey = Math.max(0, va - v, v - vb);
+    if (ex <= 1e-6 && ey <= 1e-6) return inner(b, du, v);
+    const d = Math.hypot(ex, ey), cu = Math.max(ua, Math.min(ub, du)), cv = Math.max(va, Math.min(vb, v));   // nearest point of the picture
+    if (mode === 'plain') return plainV;
+    if (mode === 'fade') { const t = Math.min(1, d / aw), s2 = t * t * (3 - 2 * t); return inner(b, cu, cv) * (1 - s2) + plainV * s2; }
+    const t = Math.min(1, d / aw); return inner(b, cu, cv) * (1 - t) + inner(bB, cu, cv) * t;   // extend: the edge carries on, softening with distance
+  };
+}
+// the full grid: points, directions, thickness, which cells are solid, and how much bulb light each point gets
+const moved = () => num('picX', 0) !== 0 || num('picY', 0) !== 0 || num('picZ', 100) !== 100;
+function mirrored(b) { const c = S.ltMir; if (c && c.src === b) return c.out; const W = S.W, H = S.H, o = new Float32Array(b.length);
+  for (let y = 0; y < H; y++) { const r = y * W; for (let x = 0; x < W; x++) o[r + x] = b[r + W - 1 - x]; } S.ltMir = { src: b, out: o }; return o; }
+const backFace = () => FLATLIKE.has(S.shape) && $('texSide').value === 'in';   // flat pieces: smooth side towards you, so the picture is mirrored
+function buildGrid(b, maxCells) {
+  const sh = S.shape; if (backFace()) b = mirrored(b);
+  if (sh === 'flat' && !(num('hangD', 0) > 0) && !moved()) {   // Relief Forge's own plate, unchanged
+    const p = ltPlate(b, maxCells), nu = p.gx, nv = p.gy, n = nu * nv, P = new Float32Array(n * 3), D = new Float32Array(n * 3), Nu = new Float32Array(n * 3), T = new Float32Array(n);
+    for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const k = j * nu + i; P[k * 3] = i * p.res; P[k * 3 + 1] = j * p.res; D[k * 3 + 2] = Nu[k * 3 + 2] = 1; T[k] = p.T[(nv - 1 - j) * nu + i]; }
+    const g = { sh, forge: p, nu, nv, wrap: false, pole: false, P, D, Nu, T, cellIn: null, tmin: p.tmin, tmax: p.tmax, TF: p.tmax + 0.6, dir: 1, extras: [], Umm: p.Wmm, Vmm: p.Hmm, res: p.res,
+      light: () => [(nu - 1) * p.res / 2, (nv - 1) * p.res / 2, -num('bulbD', 40)] };
+    g.pic = { u0: 0, u1: p.Wmm, v0: 0, v1: p.Hmm }; bulb(g, null);
+    if (num('softR', 0) > 0) { const isP = new Uint8Array(n); for (let k = 0; k < n; k++) isP[k] = T[k] <= p.tmax + 1e-4 ? 1 : 0; soften(g, isP);
+      for (let k = 0; k < n; k++) { const i = k % nu, j = (k - i) / nu; p.T[(nv - 1 - j) * nu + i] = T[k]; } }
+    return g;
+  }
+  const g = spec(maxCells), { nu, nv } = g, n = nu * nv, P = new Float32Array(n * 3), D = new Float32Array(n * 3), Nu = new Float32Array(n * 3), T = new Float32Array(n).fill(g.TF), isPic = new Uint8Array(n);
+  const smp = sampler(b, g), bgV = $('ltBg').value === 'glow' ? 1 : 0, F = num('ltFrame', 4);
+  for (let j = 0; j < nv; j++) { const v = j * g.resV;
+    for (let i = 0; i < nu; i++) { const u = i * g.resU, k = j * nu + i, a = g.at(u, v);
+      P[k * 3] = a[0]; P[k * 3 + 1] = a[1]; P[k * 3 + 2] = a[2]; D[k * 3] = a[3]; D[k * 3 + 1] = a[4]; D[k * 3 + 2] = a[5];
+      if (a.length > 6) { Nu[k * 3] = a[6]; Nu[k * 3 + 1] = a[7]; Nu[k * 3 + 2] = a[8]; } else { Nu[k * 3] = a[3]; Nu[k * 3 + 1] = a[4]; Nu[k * 3 + 2] = a[5]; }
+      const p = g.pic; if (u < p.u0 - 1e-6 || u > p.u1 + 1e-6 || v < p.v0 - 1e-6 || v > p.v1 + 1e-6) continue;   // frame / rim: solid
+      const s = smp(u, v); isPic[k] = 1; T[k] = -1 - (s < 0 ? bgV : s); } }   // brightness parked as -1-v until the bulb pass
+  g.P = P; g.D = D; g.Nu = Nu; g.T = T; g.isPic = isPic;
+  if (g.pole) { const k0 = (nv - 1) * nu; for (let i = 0; i < nu; i++) { const k = k0 + i; P[k * 3] = P[k0 * 3]; P[k * 3 + 1] = P[k0 * 3 + 1]; } }
+  if (g.inS) flatMask(g, F);
+  bulb(g, isPic);
+  if (num('softR', 0) > 0) soften(g, g.isPic);
+  return g;
+}
+function flatMask(g, F) {   // solid cells inside the outline; the frame follows the outline inwards
+  const { nu, nv } = g, cu = nu - 1, cv = nv - 1, C = new Uint8Array(cu * cv);
+  for (let j = 0; j < cv; j++) for (let i = 0; i < cu; i++) C[j * cu + i] = g.inS((i + 0.5) * g.resU, (j + 0.5) * g.resV) ? 1 : 0;
+  for (let pass = 0; pass < 3; pass++) for (let j = 0; j < cv - 1; j++) for (let i = 0; i < cu - 1; i++) {   // no cells touching only at a corner (keeps the mesh manifold)
+    const a = C[j * cu + i], b = C[j * cu + i + 1], c = C[(j + 1) * cu + i], d = C[(j + 1) * cu + i + 1];
+    if (a && d && !b && !c) C[j * cu + i + 1] = 1; else if (b && c && !a && !d) C[j * cu + i] = 1; }
+  // distance (mm) from each grid point to the nearest point outside the outline (chamfer 3-4)
+  const n = nu * nv, Dm = new Float32Array(n).fill(1e9), inC = (i, j) => i >= 0 && j >= 0 && i < cu && j < cv && C[j * cu + i];
+  for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) if (!(inC(i - 1, j - 1) && inC(i, j - 1) && inC(i - 1, j) && inC(i, j))) Dm[j * nu + i] = 0;
+  const h = Math.min(g.resU, g.resV), d1 = h, d2 = h * Math.SQRT2;
+  for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const k = j * nu + i; let d = Dm[k];
+    if (i > 0) d = Math.min(d, Dm[k - 1] + d1); if (j > 0) { d = Math.min(d, Dm[k - nu] + d1); if (i > 0) d = Math.min(d, Dm[k - nu - 1] + d2); if (i < nu - 1) d = Math.min(d, Dm[k - nu + 1] + d2); } Dm[k] = d; }
+  for (let j = nv - 1; j >= 0; j--) for (let i = nu - 1; i >= 0; i--) { const k = j * nu + i; let d = Dm[k];
+    if (i < nu - 1) d = Math.min(d, Dm[k + 1] + d1); if (j < nv - 1) { d = Math.min(d, Dm[k + nu] + d1); if (i < nu - 1) d = Math.min(d, Dm[k + nu + 1] + d2); if (i > 0) d = Math.min(d, Dm[k + nu - 1] + d2); } Dm[k] = d; }
+  for (let k = 0; k < n; k++) { const u = (k % nu) * g.resU, v = Math.floor(k / nu) * g.resV;
+    const onTab = g.tab && Math.hypot(u - g.tab.cx, v - g.tab.cy) <= g.tab.r + 1e-6;
+    if (Dm[k] < F - 1e-6 || onTab || v > g.boxH) { g.T[k] = g.TF; g.isPic[k] = 0; } }
+  g.cellIn = C;
+}
+function bulb(g, isPic) {   // light from the bulb at each point; optional evening-out; brightness → thickness
+  const { nu, nv, P, Nu, T } = g, n = nu * nv, L = g.light(), E = new Float32Array(n);
+  for (let k = 0; k < n; k++) { const dx = P[k * 3] - L[0], dy = P[k * 3 + 1] - L[1], dz = P[k * 3 + 2] - L[2], d = Math.hypot(dx, dy, dz) || 1, nl = Math.hypot(Nu[k * 3], Nu[k * 3 + 1], Nu[k * 3 + 2]) || 1;
+    E[k] = Math.max(0, (dx * Nu[k * 3] + dy * Nu[k * 3 + 1] + dz * Nu[k * 3 + 2]) / nl) / (d * d * d); }
+  const sm = []; for (let k = 0; k < n; k += Math.max(1, n >> 12)) if (!isPic || isPic[k]) sm.push(E[k]); sm.sort((a, b) => a - b);
+  const Eref = sm[Math.floor(sm.length * 0.1)] || 1, Ehi = sm[Math.floor(sm.length * 0.95)] || 1, Ef = new Float32Array(n), Ep = new Float32Array(n);
+  for (let k = 0; k < n; k++) { Ef[k] = Math.min(3, E[k] / Eref); Ep[k] = Math.min(1.25, E[k] / Ehi); }   // Ef: for evening out; Ep: for the preview (1 = the brightest-lit parts)
+  g.E = Ep; g.Eref = Eref; g.bulbPos = L;
+  const even = $('bulbOn').checked;
+  if (!isPic) {   // Relief Forge's plate: thickness back to brightness, even it out, and back (frame untouched)
+    if (!even) return; const lnT = Math.log(LT_TLO), p = g.forge;
+    for (let k = 0; k < n; k++) { if (T[k] > g.tmax + 1e-4) continue; let v = (Math.exp(lnT * (T[k] - g.tmin) / (g.tmax - g.tmin)) - LT_TLO) / (1 - LT_TLO);
+      const t = (LT_TLO + (1 - LT_TLO) * v) / Ef[k]; v = Math.min(1, Math.max(0, (t - LT_TLO) / (1 - LT_TLO))); T[k] = thickOf(v, g.tmin, g.tmax);
+      const i = k % nu, j = (k - i) / nu; p.T[(nv - 1 - j) * nu + i] = T[k]; }
+    return; }
+  for (let k = 0; k < n; k++) { if (!isPic[k]) continue; let v = -1 - T[k];
+    if (even && Ef[k] > 0) { const t = (LT_TLO + (1 - LT_TLO) * v) / Ef[k]; v = Math.min(1, Math.max(0, (t - LT_TLO) / (1 - LT_TLO))); }   // brighter-lit parts thicker, so all look as lit as the dimmest tenth
+    T[k] = thickOf(v, g.tmin, g.tmax); }
+}
+function soften(g, isP) {   // ramp the picture up to the solid frame / rims over a few mm, so they meet without a cliff
+  const { nu, nv, T, TF } = g, n = nu * nv, rs = num('softR', 0), du = g.resU || g.res, dv = g.resV || g.res, dd = Math.hypot(du, dv), Dm = new Float32Array(n);
+  for (let k = 0; k < n; k++) Dm[k] = isP[k] ? 1e9 : 0;
+  const at = (i, j) => { if (g.wrap) i = (i + nu) % nu; else if (i < 0 || i >= nu) return -1; return j < 0 || j >= nv ? -1 : j * nu + i; };
+  for (let pass = 0; pass < 2; pass++) { const f = pass ? -1 : 1, J0 = pass ? nv - 1 : 0, I0 = pass ? nu - 1 : 0;
+    for (let jj = 0; jj < nv; jj++) { const j = J0 + f * jj; for (let ii = 0; ii < nu; ii++) { const i = I0 + f * ii, k = j * nu + i; let d = Dm[k]; if (!d) continue;
+      for (const [a, b2, w] of [[-f, 0, du], [0, -f, dv], [-f, -f, dd], [f, -f, dd]]) { const q = at(i + a, j + b2); if (q >= 0) d = Math.min(d, Dm[q] + w); } Dm[k] = d; } } }
+  for (let k = 0; k < n; k++) { if (!isP[k] || Dm[k] >= rs) continue; const t = Dm[k] / rs, s2 = t * t * (3 - 2 * t); T[k] = TF - (TF - T[k]) * s2; }
+}
+// ---------- mesh: closed shell from the grid (+ floors and rings) ----------
+function buildMesh(g) {
+  const { nu, nv, wrap, pole, P, D, T, dir } = g, n = nu * nv, cu = wrap ? nu : nu - 1, cv = nv - 1;
+  const V = new Float32Array(n * 6), vid = (i, j, s) => { i = ((i % nu) + nu) % nu; if (pole && j === nv - 1) i = 0; return s * n + j * nu + i; };
+  for (let k = 0; k < n; k++) for (let c = 0; c < 3; c++) { V[k * 3 + c] = P[k * 3 + c]; V[(n + k) * 3 + c] = P[k * 3 + c] + dir * T[k] * D[k * 3 + c]; }
+  let I = new Uint32Array(1 << 16), ni = 0;
+  const push = (a, b, c) => { if (ni + 3 > I.length) { const J = new Uint32Array(I.length * 2); J.set(I); I = J; } I[ni++] = a; I[ni++] = b; I[ni++] = c; };
+  const tri = (Va, a, b, c, ox, oy, oz) => { if (a === b || b === c || a === c) return;
+    const ux = Va[b * 3] - Va[a * 3], uy = Va[b * 3 + 1] - Va[a * 3 + 1], uz = Va[b * 3 + 2] - Va[a * 3 + 2], vx = Va[c * 3] - Va[a * 3], vy = Va[c * 3 + 1] - Va[a * 3 + 1], vz = Va[c * 3 + 2] - Va[a * 3 + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; if (nx * ox + ny * oy + nz * oz < 0) push(a, c, b); else push(a, b, c); };
+  const C = g.cellIn, cin = (i, j) => { if (j < 0 || j >= cv) return false; if (wrap) i = ((i % cu) + cu) % cu; else if (i < 0 || i >= cu) return false; return !C || !!C[j * cu + i]; };
+  const bp = (k, c) => P[k * 3 + c], nrm = k => [D[k * 3] * dir, D[k * 3 + 1] * dir, D[k * 3 + 2] * dir];
+  for (let j = 0; j < cv; j++) for (let i = 0; i < cu; i++) { if (!cin(i, j)) continue;
+    const q = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], k0 = vid(i, j, 0) % n, k2 = vid(i + 1, j + 1, 0) % n;
+    let o = nrm(k0); if (pole && j === cv - 1) o = nrm(vid(i, j, 0) % n);
+    for (const s of [1, 0]) { const f = s ? 1 : -1, ids = q.map(([a, b]) => vid(a, b, s));
+      tri(V, ids[0], ids[1], ids[2], f * o[0], f * o[1], f * o[2]); tri(V, ids[0], ids[2], ids[3], f * o[0], f * o[1], f * o[2]); }
+    // walls where the neighbour isn't solid
+    const cx = (bp(k0, 0) + bp(k2, 0)) / 2, cy = (bp(k0, 1) + bp(k2, 1)) / 2, cz = (bp(k0, 2) + bp(k2, 2)) / 2;
+    const edges = [[i, j, i, j + 1, -1, 0], [i + 1, j, i + 1, j + 1, 1, 0], [i, j, i + 1, j, 0, -1], [i, j + 1, i + 1, j + 1, 0, 1]];
+    for (const [ia, ja, ib, jb, di, dj] of edges) { if (cin(i + di, j + dj)) continue;
+      const a0 = vid(ia, ja, 0), b0 = vid(ib, jb, 0), a1 = vid(ia, ja, 1), b1 = vid(ib, jb, 1); if (a0 === b0) continue;
+      const mx = (V[a0 * 3] + V[b0 * 3]) / 2 - cx, my = (V[a0 * 3 + 1] + V[b0 * 3 + 1]) / 2 - cy, mz = (V[a0 * 3 + 2] + V[b0 * 3 + 2]) / 2 - cz;
+      tri(V, a0, b0, b1, mx, my, mz); tri(V, a0, b1, a1, mx, my, mz); } }
+  const parts = [{ V, I: I.subarray(0, ni) }];
+  for (const e of g.extras) parts.push(ringMesh(g, e));
+  return parts;
+}
+function ringMesh(g, e) {   // a flat floor / top ring with a round hole, reaching half the thinnest wall into the wall
+  const { nu, nv, P, D, dir } = g, j = e.top ? nv - 1 : 0, K = nu, V = new Float32Array(K * 4 * 3), z0 = e.top ? e.z - e.t : e.z, z1 = z0 + e.t;
+  let rmin = 1e9;
+  for (let i = 0; i < K; i++) { const k = j * nu + i, x = P[k * 3] + dir * 0.5 * g.tmin * D[k * 3], y = P[k * 3 + 1] + dir * 0.5 * g.tmin * D[k * 3 + 1]; rmin = Math.min(rmin, Math.hypot(P[k * 3], P[k * 3 + 1]) - (dir < 0 ? g.tmax : 0));
+    const t = Math.atan2(y, x); V.set([x, y, z0], i * 3); V.set([x, y, z1], (K + i) * 3); }
+  const rh = Math.min(e.hole, Math.max(1, rmin - 2));
+  for (let i = 0; i < K; i++) { const k = j * nu + i, t = Math.atan2(P[k * 3 + 1], P[k * 3]); V.set([rh * Math.cos(t), rh * Math.sin(t), z0], (2 * K + i) * 3); V.set([rh * Math.cos(t), rh * Math.sin(t), z1], (3 * K + i) * 3); }
+  e.holeUsed = rh;
+  const I = []; const tri = (a, b, c, ox, oy, oz) => { const ux = V[b * 3] - V[a * 3], uy = V[b * 3 + 1] - V[a * 3 + 1], uz = V[b * 3 + 2] - V[a * 3 + 2], vx = V[c * 3] - V[a * 3], vy = V[c * 3 + 1] - V[a * 3 + 1], vz = V[c * 3 + 2] - V[a * 3 + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; if (nx * ox + ny * oy + nz * oz < 0) I.push(a, c, b); else I.push(a, b, c); };
+  for (let i = 0; i < K; i++) { const i1 = (i + 1) % K, ob = i, ob1 = i1, ot = K + i, ot1 = K + i1, ib = 2 * K + i, ib1 = 2 * K + i1, it = 3 * K + i, it1 = 3 * K + i1;
+    const mx = V[ob * 3] + V[ob1 * 3], my = V[ob * 3 + 1] + V[ob1 * 3 + 1];
+    tri(ot, ot1, it1, 0, 0, 1); tri(ot, it1, it, 0, 0, 1); tri(ob, ob1, ib1, 0, 0, -1); tri(ob, ib1, ib, 0, 0, -1);
+    tri(ob, ob1, ot1, mx, my, 0); tri(ob, ot1, ot, mx, my, 0); tri(ib, ib1, it1, -mx, -my, 0); tri(ib, it1, it, -mx, -my, 0); }
+  return { V, I: Uint32Array.from(I) };
+}
+function meshSTL(parts) {
+  let n = 0; for (const p of parts) n += p.I.length / 3;
+  let zmin = Infinity, cx = 0, cy = 0, xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+  for (const p of parts) for (let k = 0; k < p.V.length; k += 3) { zmin = Math.min(zmin, p.V[k + 2]); xmin = Math.min(xmin, p.V[k]); xmax = Math.max(xmax, p.V[k]); ymin = Math.min(ymin, p.V[k + 1]); ymax = Math.max(ymax, p.V[k + 1]); }
+  cx = (xmin + xmax) / 2; cy = (ymin + ymax) / 2;
+  const buf = new ArrayBuffer(84 + 50 * n), dv = new DataView(buf); new Uint8Array(buf).set(new TextEncoder().encode('Relief Forge Litho')); dv.setUint32(80, n, true);
+  let o = 84;
+  for (const { V, I } of parts) for (let t = 0; t < I.length; t += 3) { const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+    const ux = V[b] - V[a], uy = V[b + 1] - V[a + 1], uz = V[b + 2] - V[a + 2], vx = V[c] - V[a], vy = V[c + 1] - V[a + 1], vz = V[c + 2] - V[a + 2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz) || 1;
+    dv.setFloat32(o, nx / l, true); dv.setFloat32(o + 4, ny / l, true); dv.setFloat32(o + 8, nz / l, true); o += 12;
+    for (const q of [a, b, c]) { dv.setFloat32(o, V[q] - cx, true); dv.setFloat32(o + 4, V[q + 1] - cy, true); dv.setFloat32(o + 8, V[q + 2] - zmin, true); o += 12; } o += 2; }
+  return new Blob([buf], { type: 'model/stl' });
+}
+function bbox(parts) { const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+  for (const p of parts) for (let k = 0; k < p.V.length; k += 3) for (let c = 0; c < 3; c++) { lo[c] = Math.min(lo[c], p.V[k + c]); hi[c] = Math.max(hi[c], p.V[k + c]); } return { lo, hi }; }
+
+// ---------- bases and stands: separate prints, built in the lithophane's own coordinates so the 3D view can show them in place ----------
+function baseKind() { const sh = S.shape;
+  if (sh === 'flat') return 'flat';
+  if (sh === 'sphere') return 'globe';
+  if (sh === 'cone' || sh === 'poly' || sh === 'rev' || sh === 'dome' || (sh === 'cyl' && num('cylA', 360) >= 360)) return 'shade';
+  return null; }
+function lathe(cols, prof, closedRef) {   // cols: [{c, s}] unit directions round the axis; prof(i) → [[r, z], …] closed loop, same length for every column
+  const nc = cols.length, P0 = prof(0), K = P0.length, V = [], id = new Int32Array(nc * K), axis = new Map();
+  for (let i = 0; i < nc; i++) { const pr = i ? prof(i) : P0;
+    for (let k = 0; k < K; k++) { const [r, z] = pr[k];
+      if (r <= 1e-9) { const key = k; if (!axis.has(key)) { axis.set(key, V.length / 3); V.push(0, 0, z); } id[i * K + k] = axis.get(key); }
+      else { id[i * K + k] = V.length / 3; V.push(r * cols[i].c, r * cols[i].s, z); } } }
+  const Vf = Float32Array.from(V), I = [];
+  const tri = (a, b, c, ox, oy, oz) => { if (a === b || b === c || a === c) return; const ux = Vf[b * 3] - Vf[a * 3], uy = Vf[b * 3 + 1] - Vf[a * 3 + 1], uz = Vf[b * 3 + 2] - Vf[a * 3 + 2], vx = Vf[c * 3] - Vf[a * 3], vy = Vf[c * 3 + 1] - Vf[a * 3 + 1], vz = Vf[c * 3 + 2] - Vf[a * 3 + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; if (Math.hypot(nx, ny, nz) < 1e-12) return; if (nx * ox + ny * oy + nz * oz < 0) I.push(a, c, b); else I.push(a, b, c); };
+  // the profile runs counter-clockwise in (r, z), so each edge's outward normal is (dz, −dr)
+  for (let i = 0; i < nc; i++) { const i1 = (i + 1) % nc, pa = prof(i), cm = (cols[i].c + cols[i1].c) / 2, sm = (cols[i].s + cols[i1].s) / 2;
+    for (let k = 0; k < K; k++) { const k1 = (k + 1) % K, dr = pa[k1][0] - pa[k][0], dz = pa[k1][1] - pa[k][1], onr = dz, onz = -dr, ox = onr * cm, oy = onr * sm, oz = onz;
+      const a = id[i * K + k], b = id[i1 * K + k], c = id[i1 * K + k1], d = id[i * K + k1]; tri(a, b, c, ox, oy, oz); tri(a, c, d, ox, oy, oz); } }
+  return { V: Vf, I: Uint32Array.from(I) };
+}
+function prism(cx, cy, r, z0, z1, n = 20) { const cols = []; for (let i = 0; i < n; i++) { const t = 2 * Math.PI * i / n; cols.push({ c: Math.cos(t), s: Math.sin(t) }); }
+  const m = lathe(cols, () => [[0, z0], [r, z0], [r, z1], [0, z1]]); for (let k = 0; k < m.V.length; k += 3) { m.V[k] += cx; m.V[k + 1] += cy; } return m; }
+function buildBase(g) {
+  const kind = baseKind(); if (!kind) return null;
+  const c = Math.max(0, num('bClr', 0.3)), info = [];
+  if (kind === 'flat') {   // a foot with a slot the plate stands in
+    const TF = g.TF, W = g.Umm, Ls = W + 10, Dp = Math.max(10, num('sDep', 30)), Hs = Math.max(5, num('sHt', 12)), sd = Math.min(Hs - 2, Math.max(2, num('sSlot', 7))), ws = TF + 2 * c;
+    const z1 = TF / 2 - ws / 2, z2 = TF / 2 + ws / 2, za = TF / 2 - Dp / 2, zb = TF / 2 + Dp / 2, yb = -(Hs - sd), yt = sd, yf = 0;   // plate bottom (y = 0) on the slot floor
+    // cross-section in (z, y), counter-clockwise, with the bottom split under the slot so the end caps share every vertex
+    const sec = [[za, yb], [z1, yb], [z2, yb], [zb, yb], [zb, yt], [z2, yt], [z2, yf], [z1, yf], [z1, yt], [za, yt]];
+    const x0 = (W - Ls) / 2, x1 = x0 + Ls, n = sec.length, V = new Float32Array(n * 2 * 3), I = [];
+    sec.forEach(([z, y], k) => { V.set([x0, y, z], k * 3); V.set([x1, y, z], (n + k) * 3); });
+    const tri = (a, b, cc, ox, oy, oz) => { const ux = V[b * 3] - V[a * 3], uy = V[b * 3 + 1] - V[a * 3 + 1], uz = V[b * 3 + 2] - V[a * 3 + 2], vx = V[cc * 3] - V[a * 3], vy = V[cc * 3 + 1] - V[a * 3 + 1], vz = V[cc * 3 + 2] - V[a * 3 + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; if (nx * ox + ny * oy + nz * oz < 0) I.push(a, cc, b); else I.push(a, b, cc); };
+    for (let k = 0; k < n; k++) { const k1 = (k + 1) % n, dz = sec[k1][0] - sec[k][0], dy = sec[k1][1] - sec[k][1]; tri(k, k1, n + k1, 0, -dz, dy); tri(k, n + k1, n + k, 0, -dz, dy); }   // outward (dy, −dz) in (z, y)
+    const caps = [[0, 1, 7, 8, 9], [1, 2, 6, 7], [3, 4, 5, 6, 2]];   // three convex pieces
+    for (const pc of caps) for (let q = 1; q < pc.length - 1; q++) { tri(pc[0], pc[q], pc[q + 1], -1, 0, 0); tri(n + pc[0], n + pc[q], n + pc[q + 1], 1, 0, 0); }
+    info.push(`Stand ${Ls.toFixed(0)} × ${Dp.toFixed(0)} × ${Hs.toFixed(0)} mm · slot ${ws.toFixed(2)} mm wide, ${sd} mm deep`);
+    return { parts: [{ V, I: Uint32Array.from(I) }], info, upY: true };
+  }
+  const { nu, nv, P, D, T, dir } = g, Hb = Math.max(6, num('bH', 18)), feet = $('bFeet').checked, zf = feet ? 4 : 0, zt = zf + Hb, rh = Math.max(0, num('bCable', 7)) / 2;
+  let pd = Math.min(Hb - 1.5, Math.max(1, num('bPocketD', 12)));
+  const radii = (j, i) => { const k = j * nu + i, x = P[k * 3], y = P[k * 3 + 1], tx = x + dir * T[k] * D[k * 3], ty = y + dir * T[k] * D[k * 3 + 1]; return [Math.hypot(x, y), Math.hypot(tx, ty)]; };
+  let parts = [], place;
+  if (kind === 'shade') {   // a seat groove the bottom edge drops into, a pocket for the light, a cable hole
+    const gd = Math.min(Hb - 1.5, Math.max(1, num('bSeat', 5))), cols = [], rin = new Float32Array(nu), rout = new Float32Array(nu);
+    for (let i = 0; i < nu; i++) { const k = i; cols.push({ c: P[k * 3] / Math.hypot(P[k * 3], P[k * 3 + 1]), s: P[k * 3 + 1] / Math.hypot(P[k * 3], P[k * 3 + 1]) }); let a = Infinity, b = 0;
+      for (let j = 0; j < nv && P[(j * nu + i) * 3 + 2] <= gd + 1e-6; j++) { const [r1, r2] = radii(j, i); a = Math.min(a, r1, r2); b = Math.max(b, r1, r2); } rin[i] = a; rout[i] = b; }
+    let rmin = Infinity; for (let i = 0; i < nu; i++) rmin = Math.min(rmin, rin[i] - c);
+    const Rp = Math.min(Math.max(0, num('bPocket', 40)) / 2, rmin - 2.5), rhh = Math.min(rh, Math.max(0, Rp - 1.5));
+    if (Rp < num('bPocket', 40) / 2 - 1e-6) info.push(`Light pocket reduced to Ø ${(2 * Rp).toFixed(1)} mm to fit inside the shade`);
+    if (Rp < 1) pd = 0.001;
+    const prof = i => { const Rgi = rin[i] - c, Rgo = rout[i] + c, Ro = Rgo + 3;
+      const pocket = Rp >= 1 ? [[Rp, zt], [Rp, zt - pd], [rhh, zt - pd]] : [[rhh, zt]];
+      return [[rhh, zf], [Ro, zf], [Ro, zt], [Rgo, zt], [Rgo, zt - gd], [Rgi, zt - gd], [Rgi, zt], ...pocket]; };
+    parts.push(lathe(cols, prof));
+    place = -(zt - gd);   // the shade's bottom edge rests on the groove floor
+    let ro = Infinity, ra = 0; for (let i = 0; i < nu; i++) { ro = Math.min(ro, rout[i] + c + 3); ra = Math.max(ra, rout[i] + c + 3); }
+    if (feet) for (let q = 0; q < 4; q++) { const t = Math.PI / 4 + q * Math.PI / 2, rr = ro * 0.72; parts.push(prism(rr * Math.cos(t), rr * Math.sin(t), Math.min(6, ro * 0.12), 0, zf + 0.5)); }
+    info.push(`Base Ø ${(2 * ra).toFixed(0)} × ${(zt).toFixed(0)} mm · seat groove ${gd} mm deep · pocket Ø ${Rp >= 1 ? (2 * Rp).toFixed(1) + ' × ' + pd.toFixed(1) : 'none'} mm${rhh > 0 ? ' · cable hole Ø ' + (2 * rhh).toFixed(1) : ''}`);
+    if ($('botFit').value === 'ring') info.push('Set Fittings → Bottom to Open: a floor would sit on the base\'s pocket rim.');
+  } else {   // globe: a deck it rests on, with a ring that locates in the hole underneath
+    let hole = Infinity, outer = 0, zlow = Infinity;
+    for (let i = 0; i < nu; i++) { const [r1, r2] = radii(0, i); hole = Math.min(hole, r1, r2); outer = Math.max(outer, r1, r2); }
+    for (let k = 0; k < nu * Math.min(nv, 4); k++) { zlow = Math.min(zlow, P[k * 3 + 2], P[k * 3 + 2] + dir * T[k] * D[k * 3 + 2]); }
+    const Rs = hole - c, sp = 3, Ro = Math.max(outer + 4, Rs + 8), Rp = Math.min(Math.max(0, num('bPocket', 40)) / 2, Rs - 1.5), rhh = Math.min(rh, Math.max(0, Rp - 1.5));
+    if (Rp < num('bPocket', 40) / 2 - 1e-6) info.push(`Light pocket reduced to Ø ${(2 * Rp).toFixed(1)} mm to fit the globe's hole`);
+    pd = Math.min(pd, Hb + sp - 1.5);
+    const cols = []; for (let i = 0; i < 128; i++) { const t = 2 * Math.PI * i / 128; cols.push({ c: Math.cos(t), s: Math.sin(t) }); }
+    const pocket = Rp >= 1 ? [[Rp, zt + sp], [Rp, zt + sp - pd], [rhh, zt + sp - pd]] : [[rhh, zt + sp]];
+    parts.push(lathe(cols, () => [[rhh, zf], [Ro, zf], [Ro, zt], [Rs, zt], [Rs, zt + sp], ...pocket]));
+    place = zlow - zt;
+    if (feet) for (let q = 0; q < 4; q++) { const t = Math.PI / 4 + q * Math.PI / 2, rr = Ro * 0.72; parts.push(prism(rr * Math.cos(t), rr * Math.sin(t), Math.min(6, Ro * 0.12), 0, zf + 0.5)); }
+    info.push(`Stand Ø ${(2 * Ro).toFixed(0)} × ${zt.toFixed(0)} mm · locating ring Ø ${(2 * Rs).toFixed(1)} mm · pocket Ø ${Rp >= 1 ? (2 * Rp).toFixed(1) + ' × ' + pd.toFixed(1) : 'none'} mm`);
+  }
+  for (const m of parts) for (let k = 2; k < m.V.length; k += 3) m.V[k] += place;   // into the lithophane's coordinates
+  return { parts, info, upY: false };
+}
+function baseSTL(b) {   // stands upright (flat stand: its up is the plate's y)
+  if (!b.upY) return meshSTL(b.parts);
+  const parts = b.parts.map(({ V, I }) => { const W = new Float32Array(V.length); for (let k = 0; k < V.length; k += 3) { W[k] = V[k]; W[k + 1] = -V[k + 2]; W[k + 2] = V[k + 1]; } return { V: W, I }; });
+  return meshSTL(parts);
+}
+
+// ---------- previews ----------
+const view = $('view'), vctx = view.getContext('2d');
+const LT_COL = { warm: [1, 0.78, 0.52], neutral: [1, 0.93, 0.84], cool: [0.93, 0.96, 1] };
+function showCanvas(on) { $('vcap').innerHTML = S.img ? CAPS[S.view] || '' : ''; view.hidden = !on; $('v3d').hidden = on || S.view !== '3d'; $('dropMsg').hidden = !!S.img; $('foot3d').hidden = S.view !== '3d'; }
+function drawInput() { if (!S.img) return; view.width = S.img.naturalWidth; view.height = S.img.naturalHeight; vctx.drawImage(S.img, 0, 0); }
+function drawNormals() { const n = S.mode === 'relit' ? activeNormal() : null; if (!n) { drawInput(); return; } view.width = S.W; view.height = S.H; const im = vctx.createImageData(S.W, S.H);
+  for (let i = 0; i < S.W * S.H; i++) { im.data[i * 4] = (n.nx[i] * 0.5 + 0.5) * 255; im.data[i * 4 + 1] = (-n.ny[i] * 0.5 + 0.5) * 255; im.data[i * 4 + 2] = (n.nz[i] * 0.5 + 0.5) * 255; im.data[i * 4 + 3] = 255; }
+  vctx.putImageData(im, 0, 0); }
+function draw2D(g, v) {   // the grid unrolled flat, top at the top (as Relief Forge's preview pictures)
+  const { nu, nv, T, tmin, tmax } = g, k = Math.LN2 / ((+$('lt3Half').value || 45) / 100), span = Math.max(1e-3, tmax - tmin), useE = $('lt3Src').value === 'bulb';
+  view.width = nu; view.height = nv; const im = new ImageData(nu, nv);
+  for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const t = T[j * nu + i], o = ((nv - 1 - j) * nu + i) * 4; let r, gg, bl;
+    if (g.cellIn && !cellNear(g, i, j)) { r = gg = bl = 13; }
+    else if (v === 'thick') { const q = 255 * (1 - (t - tmin) / (span + 0.6)); r = gg = bl = q; }
+    else if (v === 'render') { const q = (t - tmin) / span; const s = q > 1 ? 0.1 : Math.exp(Math.log(LT_TLO) * q); r = gg = bl = 255 * s; }
+    else { const s = Math.pow(Math.min(1, (useE ? g.E[j * nu + i] : 1) * Math.exp(-k * (t - tmin))), 1 / 2.2); r = 255 * s; gg = 205 * s; bl = 140 * s; }
+    im.data[o] = r; im.data[o + 1] = gg; im.data[o + 2] = bl; im.data[o + 3] = 255; }
+  vctx.putImageData(im, 0, 0);
+}
+function cellNear(g, i, j) { const cu = g.nu - 1, cv = g.nv - 1, C = g.cellIn; for (const [a, b] of [[i, j], [i - 1, j], [i, j - 1], [i - 1, j - 1]]) if (a >= 0 && b >= 0 && a < cu && b < cv && C[b * cu + a]) return true; return false; }
+function ltBlurGrid(a, W, H, s, wrap) {   // small separable gaussian on a plate grid (wraps round closed shapes)
+  if (s < 0.3) return a; const r = Math.ceil(s * 2.5), k = []; for (let i = -r; i <= r; i++) k.push(Math.exp(-i * i / (2 * s * s)));
+  const pass = (src, hz) => { const o = new Float32Array(src.length); for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let s1 = 0, w = 0;
+    for (let j = -r; j <= r; j++) { let xx = hz ? x + j : x; const yy = hz ? y : y + j; if (wrap && hz) xx = (xx + W) % W; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue; s1 += src[yy * W + xx] * k[j + r]; w += k[j + r]; } o[y * W + x] = s1 / w; } return o; };
+  return pass(pass(a, true), false);
+}
+const T3 = {};
+async function show3D(g, parts, base) {
+  const box = $('v3d');
+  if (!T3.ren) await (T3.init || (T3.init = init3D(box)));
+  return show3Dmesh(g, parts, base);
+}
+async function init3D(box) { { const THREE = await import('three'), { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+    const ren = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); ren.setPixelRatio(Math.min(2, devicePixelRatio)); box.appendChild(ren.domElement);
+    const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0d0e10); const cam = new THREE.PerspectiveCamera(35, 1, 1, 5000), ctl = new OrbitControls(cam, ren.domElement); ctl.enableDamping = true;
+    // Relief Forge's backlit shader, with the view angle taken from each point's own surface direction and an optional bulb
+    const mat = new THREE.ShaderMaterial({ side: THREE.DoubleSide, uniforms: { uK: { value: 1.5 }, uTmin: { value: 0.8 }, uBack: { value: 1 }, uRoom: { value: 0.15 }, uBulb: { value: 0 }, uCol: { value: new THREE.Vector3(1, 0.78, 0.52) }, uL: { value: new THREE.Vector3(-0.5, 0.6, 0.62).normalize() } },
+      vertexShader: `attribute float thb; attribute float eb; attribute vec3 nb; varying float vT; varying float vE; varying vec3 vN; varying vec3 vB; varying vec3 vP; void main(){ vT = thb; vE = eb; vN = normalize(mat3(modelMatrix) * normal); vB = normalize(mat3(modelMatrix) * nb); vec4 w = modelMatrix * vec4(position, 1.0); vP = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+      fragmentShader: `uniform float uK, uTmin, uBack, uRoom, uBulb; uniform vec3 uCol, uL; varying float vT; varying float vE; varying vec3 vN; varying vec3 vB; varying vec3 vP;
+        void main(){ vec3 V = normalize(cameraPosition - vP); vec3 N = normalize(gl_FrontFacing ? vN : -vN);
+          float cv = max(0.25, abs(dot(V, vB)));                     // a tilted view crosses more plastic
+          float e = mix(1.0, vE, uBulb);
+          vec3 back = uCol * uBack * e * exp(-uK * (vT - uTmin) / cv);   // light from behind, faded by thickness
+          vec3 room = vec3(0.92, 0.9, 0.86) * uRoom * (0.3 + 0.7 * max(0.0, dot(N, uL)));
+          gl_FragColor = vec4(pow(clamp(back + room, 0.0, 1.0), vec3(1.0 / 2.2)), 1.0); }` });
+    const bulbM = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffd9a0 }));
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x8b8682, roughness: 0.7, metalness: 0 });
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55)); const dl = new THREE.DirectionalLight(0xffffff, 1.1); dl.position.set(0.6, 1, 0.8); scene.add(dl);
+    Object.assign(T3, { THREE, ren, scene, cam, ctl, mat, bulbM, baseMat }); scene.add(bulbM);
+    const fit = () => { const w = box.clientWidth || 400, h = box.clientHeight || 400; ren.setSize(w, h, false); ren.domElement.style.width = '100%'; ren.domElement.style.height = '100%'; cam.aspect = w / h; cam.updateProjectionMatrix(); };
+    T3.fit = fit; new ResizeObserver(fit).observe(box); fit();
+    const loop = () => { if (S.view !== '3d') { T3.raf = 0; return; } ctl.update(); ren.render(scene, cam); if (S.still) { T3.raf = 0; return; } T3.raf = requestAnimationFrame(loop); }; T3.loop = loop;
+  }
+}
+function show3Dmesh(g, parts, base) {
+  const { THREE } = T3; if (T3.meshes) for (const m of T3.meshes) { T3.scene.remove(m); m.geometry.dispose(); }
+  const n = g.nu * g.nv, thb0 = ltBlurGrid(g.T, g.nu, g.nv, (+$('lt3Spread').value || 0.3) / g.res / 2, g.wrap);
+  T3.meshes = [];
+  const { lo, hi } = bbox(parts), c = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]];
+  const all = parts.concat(base ? base.parts : []), nL = parts.length;
+  for (let p = 0; p < all.length; p++) { const { V, I } = all[p], nv3 = V.length / 3, geo = new THREE.BufferGeometry(), pos = new Float32Array(V.length);
+    const fl = FLATLIKE.has(S.shape);
+    for (let k = 0; k < nv3; k++) { if (fl) { pos[k * 3] = V[k * 3] - c[0]; pos[k * 3 + 1] = V[k * 3 + 1] - lo[1]; pos[k * 3 + 2] = V[k * 3 + 2]; }
+      else { pos[k * 3] = V[k * 3] - c[0]; pos[k * 3 + 1] = V[k * 3 + 2] - c[2]; pos[k * 3 + 2] = -(V[k * 3 + 1] - c[1]); } }   // shades: z up → three's y up
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setIndex(new THREE.BufferAttribute(I, 1));
+    const thb = new Float32Array(nv3), eb = new Float32Array(nv3), nb = new Float32Array(nv3 * 3);
+    if (p === 0) for (let k = 0; k < nv3; k++) { const q = k % n; thb[k] = thb0[q]; eb[k] = g.E[q]; const x = g.Nu[q * 3], y = g.Nu[q * 3 + 1], z = g.Nu[q * 3 + 2], l = Math.hypot(x, y, z) || 1; if (fl) { nb[k * 3] = x / l; nb[k * 3 + 1] = y / l; nb[k * 3 + 2] = z / l; } else { nb[k * 3] = x / l; nb[k * 3 + 1] = z / l; nb[k * 3 + 2] = -y / l; } }
+    else for (let k = 0; k < nv3; k++) { thb[k] = 20; eb[k] = 1; nb[k * 3 + 1] = 1; }
+    geo.setAttribute('thb', new THREE.BufferAttribute(thb, 1)); geo.setAttribute('eb', new THREE.BufferAttribute(eb, 1)); geo.setAttribute('nb', new THREE.BufferAttribute(nb, 3));
+    geo.computeVertexNormals(); const m = new THREE.Mesh(geo, p < nL ? T3.mat : T3.baseMat); if (backFace()) m.rotation.y = Math.PI; T3.scene.add(m); T3.meshes.push(m); }
+  T3.mat.uniforms.uTmin.value = g.tmin;
+  const L = g.bulbPos, sz = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]);
+  if (FLATLIKE.has(S.shape)) T3.bulbM.position.set((L[0] - c[0]) * (backFace() ? -1 : 1), L[1] - lo[1], L[2] * (backFace() ? -1 : 1)); else T3.bulbM.position.set(L[0] - c[0], L[2] - c[2], -(L[1] - c[1])); T3.bulbM.scale.setScalar(Math.max(1.5, sz * 0.025));
+  const fb = new THREE.Box3(); for (const m of T3.meshes) { m.updateMatrixWorld(); fb.expandByObject(m); }
+  T3.dims = { lo, hi, c, sz, fb };
+  const key = S.shape + '|' + sz.toFixed(0) + '|' + (base ? 'b' : '') + (backFace() ? 'r' : ''); if (T3.framedFor !== key) { fit3D(); T3.framedFor = key; }
+  lt3dUniforms(); T3.fit(); if (!T3.raf) T3.loop();
+}
+function fit3D() { const d = T3.dims; if (!d) return; const b = d.fb, flat = FLATLIKE.has(S.shape), sx = b.max.x - b.min.x, sy = b.max.y - b.min.y, sz = Math.max(sx, sy, b.max.z - b.min.z), cy = (b.min.y + b.max.y) / 2, dist = sz * 2.2;
+  T3.cam.position.set(0, flat ? cy : cy + sz * 0.3, dist);   // the front faces the camera; shades seen from a little above
+  T3.cam.near = dist / 50; T3.cam.far = dist * 10; T3.cam.updateProjectionMatrix(); T3.ctl.target.set(0, cy, 0); T3.ctl.update(); }
+function lt3dUniforms() { const half = (+$('lt3Half').value || 45) / 100;
+  $('lt3BackV').textContent = $('lt3Back').value + '%'; $('lt3RoomV').textContent = $('lt3Room').value + '%'; $('lt3HalfV').textContent = half.toFixed(2) + ' mm';
+  if (!T3.mat) return; const u = T3.mat.uniforms;
+  u.uK.value = Math.LN2 / half; u.uBack.value = (+$('lt3Back').value || 0) / 100; u.uRoom.value = (+$('lt3Room').value || 0) / 100; const c = LT_COL[$('lt3Col').value] || LT_COL.warm; u.uCol.value.set(c[0], c[1], c[2]);
+  u.uBulb.value = $('lt3Src').value === 'bulb' ? 1 : 0; if (T3.bulbM) T3.bulbM.visible = u.uBulb.value > 0; }
+
+// ---------- refresh ----------
+function haveSource() { return S.img && (S.mode === 'photo' || !!activeNormal()); }
+let refreshing = null, refreshAgain = false;
+async function refresh() {
+  if (refreshing) { refreshAgain = true; return refreshing; }
+  refreshing = refresh0(); try { await refreshing; } finally { refreshing = null; }
+  if (refreshAgain) { refreshAgain = false; return refresh(); }
+}
+async function refresh0() {
+  updateButtons(); updateFields();
+  if (!S.img) { showCanvas(false); return; }
+  const v = S.view;
+  if (v === 'input' || v === 'normal') { showCanvas(true); v === 'input' ? drawInput() : drawNormals(); $('info').textContent = `${S.imgName} · ${S.img.naturalWidth}×${S.img.naturalHeight} · working ${S.W}×${S.H}`; updateDims(); return; }
+  if (!haveSource()) { showCanvas(true); drawInput(); $('info').textContent = 'No normals yet: make them, open a .relief project, or switch to Photo (classic).'; return; }
+  try {
+    $('info').textContent = 'Baking…'; await tick();
+    const b = S.ltB || await ltBrightness(); S.ltB = b;
+    const g = buildGrid(b, 520); S.prevGrid = g;
+    S.prevBase = $('baseOn').checked ? buildBase(g) : null; showBaseInfo();
+    if (v === '3d') { showCanvas(false); const parts = buildMesh(g); await show3D(g, parts, $('bShow').checked ? S.prevBase : null); S.prevParts = parts; }
+    else { showCanvas(true); draw2D(g, v); }
+    updateDims(g);
+    $('info').textContent = `${S.mode === 'photo' ? 'Photo' : 'Relit'} · preview grid ${g.nu} × ${g.nv} (${(g.resU || g.res).toFixed(2)} mm) · export uses ${$('ltRes').value} mm`;
+  } catch (e) { console.error(e); $('info').textContent = 'Could not show it: ' + (e.message || e); }
+}
+let rT = 0; const schedule = (ms = 120) => { clearTimeout(rT); rT = setTimeout(refresh, ms); };
+function fullSize() {   // grid size at export detail, without building it
+  if (S.shape === 'flat' && !(num('hangD', 0) > 0) && !moved()) { const p = ltPlate(new Float32Array(16), 0); return { nu: p.gx, nv: p.gy, tris: 2 * (p.gx - 1) * (p.gy - 1) + 6 * (p.gx + p.gy), Wmm: p.Wmm, Hmm: p.Hmm }; }
+  const g = spec(0), cu = g.wrap ? g.nu : g.nu - 1, tris = 4 * cu * (g.nv - 1) + (g.wrap ? 4 * g.nu : 4 * (cu + g.nv)) + g.extras.length * 8 * g.nu;
+  return { nu: g.nu, nv: g.nv, tris, g };
+}
+function updateDims(g) {
+  if (!S.img) { $('dims').innerHTML = '<span class="dk">—</span>'; return; }
+  const sh = S.shape, f = fullSize(), mbs = (f.tris * 50 / 1e6), R = [], mm = v => (+v).toFixed(v >= 100 ? 0 : 1);
+  const pg = g || S.prevGrid, fl = FLATLIKE.has(sh);
+  if (pg) { const { lo, hi } = bbox([{ V: (() => { const n = pg.nu * pg.nv, V = new Float32Array(n * 6); for (let k = 0; k < n; k++) for (let c = 0; c < 3; c++) { V[k * 3 + c] = pg.P[k * 3 + c]; V[(n + k) * 3 + c] = pg.P[k * 3 + c] + pg.dir * pg.T[k] * pg.D[k * 3 + c]; } return V; })() }]);
+    R.push(fl ? ['Size', `${mm(hi[0] - lo[0])} × ${mm(hi[1] - lo[1])} mm`, `${mm(hi[2] - lo[2])} mm thick`] : ['Size', `${mm(hi[0] - lo[0])} × ${mm(hi[1] - lo[1])} × ${mm(hi[2] - lo[2])} mm`, 'width × depth × height']); }
+  const tmin = Math.max(0.3, num('ltTmin', 0.8)), tmax = Math.max(tmin + 0.2, num('ltTmax', 3)), inside = $('texSide').value === 'in' && !fl, TF = tmax + 0.6;
+  if (sh === 'rev' && f.g && f.g.revR) { const r = f.g.revR; R.push(['Diameters', `Ø ${(2 * r[0]).toFixed(0)} · ${(2 * r[1]).toFixed(0)} · ${(2 * r[2]).toFixed(0)} mm`, 'bottom · widest · top (smooth side)']); }
+  if (sh === 'cyl' || sh === 'sphere' || sh === 'dome') { const D = num('cylD', 80);
+    R.push(inside ? ['Outside', `Ø ${mm(D)} mm`, 'smooth'] : ['Inside', `Ø ${mm(D)} mm`, 'smooth']);
+    R.push(inside ? ['Inside', `down to Ø ${mm(D - 2 * TF)} mm`, 'textured'] : ['Outside', `up to Ø ${mm(D + 2 * TF)} mm`, 'textured']); }
+  if (sh === 'cone') R.push(['Diameters', `Ø ${num('coneB', 110)} → ${num('coneT', 70)} mm`, 'bottom → top (smooth side)']);
+  if (sh === 'poly') R.push(['Sides', `${Math.round(num('polyN', 6))} × ${(f.g ? f.g.side : 0).toFixed(1)} mm`, `${num('polyW', 90)} mm across flats`]);
+  if (f.g && f.g.pic && !fl) { const p = f.g.pic, span = p.span && p.span < p.u1 - p.u0 ? p.span : p.u1 - p.u0, Rh = p.v1 - p.v0, z = Math.max(0.1, num('picZ', 100) / 100);
+    if (p.fit === 'fit') { const s0 = Math.min(span / S.W, Rh / S.H) * z; R.push(['Picture', `${mm(Math.min(span, S.W * s0))} × ${mm(Math.min(Rh, S.H * s0))} mm`, `on ${mm(span)} × ${mm(Rh)} mm of surface`]); }
+    else if (p.fit === 'repeat') R.push(['Picture', `${p.rep} × ${mm(span / p.rep)} × ${mm(Rh)} mm`, 'repeated round']);
+    else if (p.fit === 'tile' || p.fit === 'mirror') R.push(['Picture', 'tiled', `over ${mm(span)} × ${mm(Rh)} mm`]);
+    else R.push(['Picture', `${mm(span)} × ${mm(Rh)} mm`, p.fit === 'fill' ? 'filled (cropped)' : 'stretched']); }
+  { let wmm = 0; if (fl) wmm = sh === 'flat' ? num('ltW', 100) : num('ltW', 100); else if (f.g && f.g.pic) { const p = f.g.pic, span = p.span && p.span < p.u1 - p.u0 ? p.span : p.u1 - p.u0, Rh = p.v1 - p.v0;
+      wmm = p.fit === 'fit' ? Math.min(span, S.W * Math.min(span / S.W, Rh / S.H)) : p.fit === 'repeat' ? span / p.rep : p.fit === 'tile' || p.fit === 'mirror' ? S.W * Math.min(span / S.W, Rh / S.H) * num('tileS', 100) / 100 : span; }
+    wmm *= Math.max(0.1, num('picZ', 100) / 100);
+    if (wmm > 0) { const ppm = S.img.naturalWidth / wmm, q = ppm >= 8 ? 'sharp' : ppm >= 5 ? 'good' : ppm >= 3 ? 'a bit soft: a bigger picture or a smaller print helps' : 'soft: use a bigger picture or a smaller print';
+      R.push(['Picture detail', `${ppm.toFixed(1)} px per mm`, q]); S.ppmLow = ppm < 3; } }
+  R.push(['Thickness', `${tmin}–${tmax} mm`, `${fl ? 'frame' : 'rims'} ${TF.toFixed(1)} mm`]);
+  if (f.g && f.g.extras.length) for (const e of f.g.extras) R.push([e.top ? 'Top ring' : 'Floor', `${e.t} mm thick`, `hole Ø ${(2 * (e.holeUsed || e.hole)).toFixed(1)} mm`]);
+  R.push(['File', `about ${mbs.toFixed(0)} MB`, `${f.nu} × ${f.nv} points at ${$('ltRes').value} mm`]);
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  $('dims').innerHTML = R.map(([a, b, c]) => `<span class="dk">${esc(a)}</span><span class="dv">${esc(b)}${c ? `<small>${esc(c)}</small>` : ''}</span>`).join('')
+    + (mbs > 120 ? `<span class="dwarn">Large file: Detail 0.25 or 0.3 mm (Print quality, above) makes it much smaller.</span>` : '');
+}
+async function saveSTL() {
+  if (!haveSource()) return; const btn = $('btnSave'); btn.disabled = true;
+  const name = `${S.imgName}_litho_${S.shape}.stl`;
+  try { const nm = await saveAs(name, async () => { setStatus('saveStatus', 'Building the model…'); await tick();
+      const b = S.ltB || await ltBrightness(); S.ltB = b;
+      const g = buildGrid(b, 0); if (g.forge) return ltSTL(g.forge); await tick(); return meshSTL(buildMesh(g)); });
+    setStatus('saveStatus', nm == null ? 'Not saved.' : 'Saved ' + nm, nm == null ? '' : 'ok'); }
+  catch (e) { console.error(e); setStatus('saveStatus', 'Save failed: ' + (e.message || e), 'err'); }
+  btn.disabled = false;
+}
+function showBaseInfo() { const k = baseKind(), b = S.prevBase;
+  $('btnSaveBase').disabled = !b || S.busy; setStatus('baseStatus', b ? b.info.join(' · ') : '', b && /reduced|Set Fittings/.test(b.info.join()) ? 'err' : ''); }
+async function saveBase() {
+  if (!haveSource()) return; const btn = $('btnSaveBase'); btn.disabled = true;
+  try { const nm = await saveAs(`${S.imgName}_litho_${S.shape}_${S.shape === 'flat' ? 'stand' : 'base'}.stl`, async () => { setStatus('baseStatus', 'Building the base…'); await tick();
+      const b = S.ltB || await ltBrightness(); S.ltB = b; const g = buildGrid(b, 520), base = buildBase(g); if (!base) throw new Error('no base for this shape'); return baseSTL(base); });
+    setStatus('baseStatus', nm == null ? 'Not saved.' : 'Saved ' + nm, nm == null ? '' : 'ok'); }
+  catch (e) { console.error(e); setStatus('baseStatus', 'Save failed: ' + (e.message || e), 'err'); }
+  btn.disabled = false;
+}
+// ---------- saving (as Relief Forge: the real Save dialog in Chrome / Edge, remembering the folder) ----------
+const LASTH = {}; cacheGet('lastHandles').then(v => { if (v) Object.assign(LASTH, v); });
+async function saveAs(name, make) {
+  const N = window.rfNative;
+  if (N && N.chooseSave) { const path = await N.chooseSave(name, 'stl'); if (!path) return null; const b = await make(); await N.writeFile(path, new Uint8Array(await b.arrayBuffer())); return String(path).split(/[\\/]/).pop(); }
+  if (window.showSaveFilePicker) { let h = null; const o = { suggestedName: name, types: [{ description: 'STL 3D model', accept: { 'model/stl': ['.stl'] } }] }, st = LASTH.stl || LASTH.any;
+    try { h = await window.showSaveFilePicker(st ? { ...o, startIn: st } : { ...o, id: 'rf-stl' }); }
+    catch (e) { if (e && e.name === 'AbortError') return null; try { h = await window.showSaveFilePicker({ ...o, id: 'rf-stl' }); } catch (e2) { if (e2 && e2.name === 'AbortError') return null; h = null; } }
+    if (h) { LASTH.stl = LASTH.any = h; cachePut('lastHandles', { ...LASTH }); const blob = await make(), w = await h.createWritable(); await w.write(blob); await w.close(); return h.name; } }
+  const blob = await make(), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); return name;
+}
+
+// ---------- UI ----------
+function updateButtons() {
+  updateGuide();
+  $('btnRun').disabled = !S.normalSess || !S.img || S.busy;
+  const has = !!S.img, src = has && haveSource();
+  for (const b of document.querySelectorAll('.tab')) b.disabled = b.dataset.v === 'input' ? false : b.dataset.v === 'normal' ? !(has && S.mode === 'relit' && activeNormal()) : !src;
+  $('btnSave').disabled = !src || S.busy;
+  const n = rawNormal(); $('nrmPill').textContent = n ? (n === S.upNormal ? 'uploaded map' : S.nrmFrom === 'project' ? 'from project' : 'made') : 'none'; $('nrmPill').className = 'pill' + (n ? ' ok' : '');
+}
+function updateFields() {
+  const sh = S.shape;
+  for (const el of document.querySelectorAll('[data-for]')) el.hidden = !el.dataset.for.split(' ').includes(sh);
+  const fit = $('fitMode').value; $('repLab').hidden = $('repBox').hidden = $('repLab').hidden || fit !== 'repeat';
+  const shp = !FLATLIKE.has(sh) && sh !== 'arc', am = $('aroundMode').value, tiled = shp && (fit === 'tile' || fit === 'mirror');
+  for (const el of document.querySelectorAll('[data-tile]')) el.hidden = !tiled;
+  for (const el of document.querySelectorAll('[data-around]')) el.hidden = !el.dataset.around.split(' ').includes(am);
+  { const g = S.prevGrid, hu = Math.ceil(((g && g.Umm) || 200) / 2), hv = Math.ceil(((g && g.Vmm) || 200) / 2); $('picX').min = -hu; $('picX').max = hu; $('picY').min = -hv; $('picY').max = hv; }
+  $('picXV').textContent = (+$('picX').value).toFixed(0) + ' mm'; $('picYV').textContent = (+$('picY').value).toFixed(0) + ' mm'; $('picZV').textContent = $('picZ').value + '%';
+  const fl = FLATLIKE.has(sh), o = $('texSide').options; o[0].text = fl ? 'Textured side faces you' : 'Outside'; o[1].text = fl ? 'Smooth side faces you (picture mirrored)' : 'Inside';
+  $('texLab').textContent = fl ? 'Facing' : 'Texture side';
+  const cylClosed = sh !== 'cyl' || num('cylA', 360) >= 360; for (const id of ['botFit', 'topFit']) $(id).disabled = !cylClosed;
+  $('fitNone').hidden = [...document.querySelectorAll('#fitCard .kv [data-for]')].some(e => !e.hidden);
+  $('picCard').hidden = ![...document.querySelectorAll('#picCard .kv [data-for]')].some(e => !e.hidden);
+  const bk = baseKind(), bon = $('baseOn').checked; $('baseNone').hidden = !!bk; for (const id of ['baseOn']) $(id).closest('label').hidden = !bk;
+  $('baseKv').hidden = !bk || !bon; $('btnSaveBase').closest('.row').hidden = !bk || !bon; $('baseStatus').hidden = !bk || !bon;
+  for (const el of document.querySelectorAll('[data-b]')) el.hidden = !bk || !el.dataset.b.split(' ').includes(bk);
+  $('baseLead').textContent = bk === 'flat' ? 'A foot with a slot the plate stands in. Put a light behind it.' : bk === 'globe' ? 'A round stand the globe sits on, with a ring that locates in its hole and a pocket for an LED puck or tea light.' : bk === 'shade' ? 'A base the shade drops into, with a pocket for an LED puck or tea light and a cable hole. Print it in any colour.' : '';
+  $('basePill').hidden = !bk;
+  const ph = S.mode === 'photo'; $('lightCard').hidden = ph; $('nrmCard').hidden = ph; $('nrmHint').hidden = !ph;
+  $('stepLightLab').textContent = ph ? 'Tone' : 'Light'; $('gstepLightLab').textContent = ph ? 'Tone' : 'Light';
+  $('printTip').textContent = FLATLIKE.has(sh) ? 'Print upright in white PLA, 100% infill, 0.1–0.12 mm layers. View it from the textured side with a light behind.'
+    : sh === 'sphere' ? 'Print on the bottom hole ring in white PLA, 100% infill (or 4+ walls), 0.1–0.12 mm layers; supports may be needed near the top.'
+    : sh === 'dome' ? 'Print standing on its open rim in white PLA, 100% infill, 0.1–0.12 mm layers. The top is gentle enough to print without supports.'
+    : sh === 'rev' ? 'Print standing on its bottom edge in white PLA, 100% infill, 0.1–0.12 mm layers. Flares steeper than 45° (bell rims) may need supports or a brim.'
+    : 'Print standing on its bottom edge in white PLA, 100% infill (or enough walls to fill it), 0.1–0.12 mm layers.';
+}
+function setMode(m) { S.mode = m; updateFields(); setTimeout(keepSave, 0); for (const b of document.querySelectorAll('#modeSeg button')) b.classList.toggle('on', b.dataset.m === m); S.ltB = null;
+  autoShow(); $('modeHelp').textContent = m === 'relit' ? 'The AI rebuilds the surface and you choose the light, so even a flat or badly lit picture comes out looking carved. Uses the same bake as Relief Forge.' : 'The picture\'s own light and dark becomes thickness, as in most lithophane makers. No model needed.';
+  schedule(); }
+function shapeBtns() { const s = S.shape, pv = $('revProf').value; for (const b of document.querySelectorAll('#shapeBtns button')) b.classList.toggle('on', b.dataset.s === s && (!b.dataset.p || b.dataset.p === pv || (pv !== 'vase' && pv !== 'bell' && b.dataset.p === 'vase'))); }
+function setShape(s) { S.shape = s; shapeBtns(); setTimeout(keepSave, 0); $('shapeHelp').textContent = SHAPES[s];
+  if (!FLATLIKE.has(s) && s !== 'arc') $('lt3Src').value = 'bulb'; else $('lt3Src').value = 'even';
+  if (S.img && haveSource() && S.view !== '3d' && !['render', 'lit', 'thick'].includes(S.view)) setView('3d'); else schedule(); }
+const CAPS = {
+  input: '<b>Picture</b> · the picture you opened.',
+  normal: '<b>Normals</b> · which way each bit of the surface faces, from the AI. The colours are directions, not the final look.',
+  '3d': '<b>3D</b> · the print with a light behind it. Drag to spin, scroll to zoom. Light settings are under the view.',
+  lit: '<b>Backlit</b> · how it looks with a light behind it, laid out flat (shades are shown opened out). Drag to move the picture, scroll to zoom it.',
+  render: '<b>Baked picture</b> · the lit carving before it becomes plastic: the picture the thickness is made from. Drag to move the picture, scroll to zoom it.',
+  thick: '<b>Thickness</b> · how thick the plastic is. Light grey = thin (glows), dark = thick (blocks light); frames and rims are darkest. Large dark patches won\'t glow.',
+};
+function setView(v) { S.view = v; for (const b of document.querySelectorAll('.tab')) b.classList.toggle('on', b.dataset.v === v); $('vcap').innerHTML = S.img ? CAPS[v] || '' : ''; refresh(); }
+function goStep(name) { S.step = name; for (const b of document.querySelectorAll('.step')) b.classList.toggle('on', b.dataset.step === name); for (const p of document.querySelectorAll('.pane')) p.hidden = p.dataset.pane !== name; updateGuide(); }
+for (const id of ['gNow', 'gNowBig']) $(id).addEventListener('click', e => { const a = e.target.closest('[data-act]'); if (!a) return;
+  if (a.dataset.act === 'photo') setMode('photo'); else if (a.dataset.act === 'load') { goStep('pic'); loadNormalModel(); $('nrmCard').scrollIntoView({ behavior: 'smooth' }); } });
+for (const el of document.querySelectorAll('.routes [data-m]')) el.addEventListener('click', () => setMode(el.dataset.m));
+function updateGuide() {
+  const st = S.step || 'pic', src = haveSource(), relit = S.mode === 'relit';
+  let now;
+  if (!S.img) now = 'Open a picture (or drop one on the window), or open a <b>.relief</b> project from Relief Forge.';
+  else if (S.busy) now = 'Making the normals… the 3D view opens when they\'re done.';
+  else if (!src) now = S.normalSess ? 'Press <b>Make normals</b> (below), or <button class="mini act" data-act="photo">Use Photo (classic)</button>'
+    : 'Choose how to make it: <button class="mini act" data-act="photo">Photo (classic) · no download</button> <button class="mini act" data-act="load">Relit · load the AI model (once)</button>';
+  else if (st === 'pic') now = 'Ready. Go to <b>2 Shape</b> to choose what to make.';
+  else if (st === 'shape') now = 'Pick a shape and set its size. The 3D view updates as you go. Then <b>3 Light</b>.';
+  else if (st === 'light') now = relit ? 'Move the light to change how the carving reads. Then <b>4 Export</b>.' : 'Adjust contrast and brightness while you watch the <b>Backlit</b> view. Then <b>4 Export</b>.';
+  else now = 'Check the sizes, add fittings or a base if you want, then <b>Save STL</b>.';
+  $('gNow').innerHTML = '<b>Now:</b> ' + now; $('gNowBig').innerHTML = '<b>Now:</b> ' + now;
+  for (const c of document.querySelectorAll('.gstep')) c.classList.toggle('on', c.dataset.g === st);
+  for (const c of document.querySelectorAll('.routes [data-m]')) c.classList.toggle('on', c.dataset.m === S.mode);
+}
+function normalsChanged() { S.gcCache = S.eaCache = null; S.ltB = null; maskNote(); updateButtons(); autoShow(); schedule(10); }
+function autoShow() { if (S.img && !S.autoShown && haveSource()) { S.autoShown = true; setView('3d'); } }
+function fitHeight() {   // height that shows the picture without cropping
+  if (!S.img) return; const g = spec(400); if (!g.pic) return; const p = g.pic, w = (p.span && p.span < p.u1 - p.u0 ? p.span : p.u1 - p.u0) / (p.fit === 'repeat' ? p.rep : 1), hp = w * S.H / S.W;
+  let H = hp + (g.rimT || 0) + (g.rimB || 0); if (g.slant) H = H * (g.Hz / g.slant);
+  $('cylH').value = Math.round(Math.min(400, Math.max(10, H))); schedule();
+}
+for (const b of document.querySelectorAll('.step')) b.onclick = () => goStep(b.dataset.step);
+for (const b of document.querySelectorAll('.tab')) b.onclick = () => setView(b.dataset.v);
+for (const b of document.querySelectorAll('#modeSeg button')) b.onclick = () => setMode(b.dataset.m);
+for (const b of document.querySelectorAll('#shapeBtns button')) b.onclick = () => { if (b.dataset.p) $('revProf').value = b.dataset.p; setShape(b.dataset.s); };
+$('fileImg').onchange = e => { const f = e.target.files[0]; if (f) onImage(f); e.target.value = ''; };
+$('fileProj').onchange = e => { const f = e.target.files[0]; if (f) openProject(f); e.target.value = ''; };
+$('fileNormalModel').onchange = e => { if (e.target.files.length) loadNormalLocal(e.target.files); e.target.value = ''; };
+$('btnLoadNormal').onclick = loadNormalModel;
+$('btnRun').onclick = runNormals; $('btnCancel').onclick = () => { S.cancel = true; };
+$('fileNrmMap').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f || !S.img) return; S.nrmImg = await loadImg(f); S.nrmPref = 'upload'; S.nrmFrom = 'upload'; $('btnClrNrm').hidden = false; prepUploadNormal(); setMode('relit'); normalsChanged(); };
+$('btnClrNrm').onclick = () => { S.nrmImg = null; S.upNormal = null; S.nrmPref = null; $('btnClrNrm').hidden = true; normalsChanged(); };
+for (const id of ['nrmConv', 'upFlipX']) $(id).onchange = () => { prepUploadNormal(); normalsChanged(); };
+for (const id of ['gridNrm', 'edgeNrm', 'edgeAmt']) $(id).onchange = normalsChanged;
+$('workRes').onchange = () => { if (S.img) { setupWorking(); normalsChanged(); } };
+$('ltBg').addEventListener('change', maskNote);
+const bakeIds = ['ltAz', 'ltEl', 'ltTone', 'ltBg', 'ltSoft', 'ltGamma', 'ltInv', 'ltCon', 'ltBri'];
+for (const id of bakeIds) $(id).addEventListener(['ltAz', 'ltEl', 'ltTone', 'ltGamma', 'ltCon', 'ltBri'].includes(id) ? 'input' : 'change', () => { S.ltB = null; $('ltConV').textContent = $('ltCon').value + '%'; $('ltBriV').textContent = (+$('ltBri').value > 0 ? '+' : '') + $('ltBri').value;
+  $('ltAzV').textContent = $('ltAz').value + '°'; $('ltElV').textContent = $('ltEl').value + '°'; $('ltToneV').textContent = $('ltTone').value + '%'; $('ltGammaV').textContent = (+$('ltGamma').value).toFixed(2); schedule(150); });
+for (const [a, b2] of [['ltTmin', 'ltTminX'], ['ltTmax', 'ltTmaxX']]) { $(b2).value = $(a).value;
+  $(a).addEventListener('change', () => { $(b2).value = $(a).value; }); $(b2).addEventListener('change', () => { $(a).value = $(b2).value; $(a).dispatchEvent(new Event('change')); }); }
+const shapeIds = ['aroundMode', 'aroundPlain', 'aroundW', 'tileS', 'tileBlend', 'tileExact', 'softR', 'revProf', 'revD', 'ltW', 'arcA', 'cylD', 'coneB', 'coneT', 'polyN', 'polyW', 'cylH', 'cylA', 'sphB', 'sphT', 'fitMode', 'repN', 'spanA', 'texSide', 'bulbOn', 'bulbD',
+  'ltTmin', 'ltTmax', 'ltFrame', 'rimT', 'rimB', 'ltRes', 'ltSmooth', 'botFit', 'topFit', 'holeD', 'plateT', 'hangD', 'lt3Spread'];
+for (const id of shapeIds) $(id).addEventListener('change', () => schedule(80));
+$('revProf').addEventListener('change', shapeBtns);
+$('bulbH').addEventListener('input', () => { $('bulbHV').textContent = $('bulbH').value + '%'; schedule(150); });
+for (const id of ['lt3Back', 'lt3Room', 'lt3Col', 'lt3Half']) $(id).addEventListener('input', () => { lt3dUniforms(); if (S.view !== '3d' && id === 'lt3Half') schedule(); });
+$('lt3Src').onchange = () => { lt3dUniforms(); if (S.view !== '3d') schedule(); };
+$('sizePreset').addEventListener('change', () => { const L = +$('sizePreset').value; if (!L || !S.img) return;
+  const F = S.shape === 'flat' ? Math.max(0, num('ltFrame', 4)) : 0, w = S.shape === 'flat' ? (S.W >= S.H ? L - 2 * F : (L - 2 * F) * S.W / S.H) : L; $('ltW').value = Math.round(w * 10) / 10; $('sizePreset').value = ''; schedule(40); });
+$('btnFit3d').onclick = fit3D; $('btnFitH').onclick = fitHeight; $('btnSave').onclick = saveSTL; $('btnSaveBase').onclick = saveBase;
+for (const id of ['baseOn', 'bH', 'bPocket', 'bPocketD', 'bSeat', 'sDep', 'sHt', 'sSlot', 'bClr', 'bCable', 'bFeet', 'bShow']) $(id).addEventListener('change', () => { T3.framedFor = null; schedule(60); });
+// move the picture by dragging it in the flat views, zoom with the wheel
+{ let drag = null;
+  const scale = () => { const r = view.getBoundingClientRect(), k = Math.min(r.width / view.width, r.height / view.height); return k || 1; };
+  const flatView = () => ['lit', 'render', 'thick'].includes(S.view) && S.prevGrid;
+  view.addEventListener('pointerdown', e => { if (!flatView()) return; drag = { x: e.clientX, y: e.clientY, X: num('picX', 0), Y: num('picY', 0) }; view.setPointerCapture(e.pointerId); view.style.cursor = 'grabbing'; });
+  view.addEventListener('pointermove', e => { if (!drag) return; const g = S.prevGrid, k = scale(), mu = (e.clientX - drag.x) / k * (g.resU || g.res), mv = (e.clientY - drag.y) / k * (g.resV || g.res);
+    $('picX').value = (drag.X + mu).toFixed(1); $('picY').value = (drag.Y - mv).toFixed(1); updateFields(); schedule(40); });
+  const end = () => { drag = null; view.style.cursor = flatView() ? 'grab' : ''; }; view.addEventListener('pointerup', end); view.addEventListener('pointercancel', end);
+  view.addEventListener('wheel', e => { if (!flatView()) return; e.preventDefault(); const z = Math.min(400, Math.max(20, num('picZ', 100) * (e.deltaY < 0 ? 1.06 : 1 / 1.06))); $('picZ').value = Math.round(z); updateFields(); schedule(60); }, { passive: false });
+  view.addEventListener('pointerenter', () => { view.style.cursor = flatView() ? 'grab' : ''; }); }
+for (const id of ['picX', 'picY', 'picZ']) $(id).addEventListener('input', () => { updateFields(); schedule(60); });
+$('btnPicC').onclick = () => { $('picX').value = 0; $('picY').value = 0; $('picZ').value = 100; updateFields(); schedule(20); };
+// drop a picture or a project anywhere
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (!f) return; if (/\.(relief|zip)$/i.test(f.name)) openProject(f); else if (/^image\//.test(f.type)) onImage(f); });
+// settings are remembered in this browser (not the picture): restored on the next visit
+const KEEP_KEY = 'reliefForgeLitho.settings.v1', DEFAULTS = {};
+const keepEls = () => [...document.querySelectorAll('.side input:not([type=file]), .side select, #foot3d input, #foot3d select')].filter(e => e.id && !['sizePreset', 'normalSel'].includes(e.id));
+for (const e of keepEls()) DEFAULTS[e.id] = e.type === 'checkbox' ? e.checked : e.value;
+function keepSave() { try { const o = { mode: S.mode, shape: S.shape, v: {} }; for (const e of keepEls()) o.v[e.id] = e.type === 'checkbox' ? e.checked : e.value; localStorage.setItem(KEEP_KEY, JSON.stringify(o)); } catch {} }
+function keepLoad() { try { const o = JSON.parse(localStorage.getItem(KEEP_KEY) || 'null'); if (!o) return null; for (const e of keepEls()) if (o.v && e.id in o.v) { if (e.type === 'checkbox') e.checked = !!o.v[e.id]; else e.value = o.v[e.id]; } return o; } catch { return null; } }
+let keepT = 0; const keepSoon = () => { clearTimeout(keepT); keepT = setTimeout(keepSave, 400); };
+document.querySelector('.side').addEventListener('change', keepSoon); document.querySelector('.side').addEventListener('input', keepSoon); $('foot3d').addEventListener('input', keepSoon); $('foot3d').addEventListener('change', () => setTimeout(keepSave, 0));
+$('btnReset').onclick = () => { for (const e of keepEls()) if (e.id in DEFAULTS) { if (e.type === 'checkbox') e.checked = DEFAULTS[e.id]; else e.value = DEFAULTS[e.id]; }
+  try { localStorage.removeItem(KEEP_KEY); } catch {} for (const id of ['ltTmin', 'ltTmax']) $(id).dispatchEvent(new Event('change')); S.ltB = null; setMode('relit'); setShape('flat'); lt3dUniforms(); T3.framedFor = null; schedule(10); };
+const kept = keepLoad();
+S.step = 'pic'; setMode(kept && kept.mode === 'photo' ? 'photo' : 'relit'); { const sh = kept && SHAPES[kept.shape] ? kept.shape : 'flat'; setShape(sh); } goStep('pic');
+$('ltAzV').textContent = $('ltAz').value + '°'; $('ltElV').textContent = $('ltEl').value + '°'; $('ltToneV').textContent = $('ltTone').value + '%'; $('ltGammaV').textContent = (+$('ltGamma').value).toFixed(2); $('bulbHV').textContent = $('bulbH').value + '%';
+$('ltConV').textContent = $('ltCon').value + '%'; $('ltBriV').textContent = (+$('ltBri').value > 0 ? '+' : '') + $('ltBri').value; lt3dUniforms(); updateFields(); updateButtons(); showCanvas(false);
+if (navigator.gpu) navigator.gpu.requestAdapter().then(a => { if (!a) setStatus('statNormal', 'No WebGPU graphics in this browser: the model would run on the processor (slow). Use Chrome or Edge.', 'err'); });
+window.__lithoApi = { T3, sampler, show3D, buildBase, baseSTL, setSession, runNormals, still() { S.still = true; }, buildGrid, buildMesh, meshSTL, ltBrightness, ltPlate, ltSTL, spec, setShape, setMode, setView, refresh, openProject, onImage };
+})();
+
+</script>
+</body>
+</html>
