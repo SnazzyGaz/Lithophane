@@ -178,6 +178,8 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
     <div class="card" id="nrmCard" hidden>
       <h3>AI normals <span class="pill" id="nrmPill">none</span></h3>
       <p class="lead">Which way each bit of the surface faces, worked out by MoGe-2. Only the normal model is needed (no depth model).</p>
+      <div class="status" id="gpuStat" style="margin:8px 0 0">Checking GPU…</div>
+      <div class="row" id="gpuRecRow" hidden style="margin:8px 0 0"><button id="btnGpuRecover" class="mini grow" title="Use after a graphics card error. Reloads the model (no download) and tries the graphics card again; if it’s still unavailable, uses the processor so you can carry on.">Recover GPU &amp; reload model</button></div>
       <div class="kv" style="margin-top:8px">
         <span>Model</span><select id="normalSel"><option value="vitl">MoGe-2 · ViT-L · best (~1.3 GB)</option><option value="vitb" selected>MoGe-2 · ViT-B · balanced (~420 MB)</option><option value="vits">MoGe-2 · ViT-S · fast (~140 MB)</option></select>
       </div>
@@ -193,7 +195,7 @@ button.act{margin:4px 4px 0 0;background:var(--acc);border-color:var(--acc);colo
       <label class="chk" title="Runs each tile a second time shifted by half a model patch and averages: the model's patch grid cancels out. About 2× time. For most detail, pair with 4 across."><input type="checkbox" id="maxQ"> Max quality (shift averaging) <span class="help">(~2× time)</span></label>
       <label class="chk" title="Removes the faint waffle-grid pattern the model can leave on flat areas. Real detail is kept."><input type="checkbox" id="gridNrm" checked> Remove patch grid <span class="help" id="gridInfo"></span></label>
       <label class="chk" title="Adds the picture's finest strokes (hair, engraving, texture) back into the normals, only where the picture's shading follows them. Best on stone or clay pictures."><input type="checkbox" id="edgeNrm"> Fine detail from the picture <select id="edgeAmt" style="width:auto;margin-left:4px;padding:3px 6px"><option value="0.5">subtle</option><option value="1" selected>normal</option><option value="2">strong</option></select> <span class="help" id="edgeInfo"></span></label>
-      <div class="row"><button id="btnRun" class="primary grow" disabled>Make normals</button><button id="btnCancel" class="mini" hidden>Cancel</button></div>
+      <div class="row"><button id="btnRun" class="primary grow" disabled>Make normals</button><button id="btnCancel" class="mini" hidden>Cancel</button><button id="btnRunRecover" class="mini" hidden title="Reload the model after a GPU failure without restarting">Recover GPU</button></div>
       <progress id="runProg" hidden value="0" max="1"></progress>
       <div class="status" id="runStatus"></div>
       <div class="sub">Or bring your own</div>
@@ -665,7 +667,7 @@ const Core = (() => {
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
-const APP_VERSION = '0.6.7';
+const APP_VERSION = '0.6.8';
 const SAMPLE_URL = 'samples/demo.jpg';   // original still life bundled with the page; nothing is uploaded
 const ORT_DIST = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/';
 const HF = 'https://huggingface.co';
@@ -727,14 +729,79 @@ async function fetchCached(url, label, prog, stat, done0, total, oldUrl, want) {
   setStatus(stat, 'Caching ' + label + '…'); await cachePut(url, blob);
   return blob;
 }
+function showRecover(on) { $('gpuRecRow').hidden = !on; $('btnRunRecover').hidden = !on; }
+const isGpuErr = e => /webgpu|gpu|device (was )?lost|lost device|GPUBuffer|mapAsync|D3D|DXGI|Vulkan|context lost|createBuffer|validation error/i.test(String(e && (e.message || e)));
+async function gpuAdapter() {
+  if (!navigator.gpu) return null;
+  try { return await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' }); } catch { return null; }
+}
+async function gpuLabel(ad) {
+  if (!ad) return '';
+  let info = ad.info || (ad.requestAdapterInfo ? await ad.requestAdapterInfo() : {});
+  const name = [info.vendor, info.architecture, info.description].filter(Boolean).join(' ') || 'GPU';
+  const f16 = ad.features.has('shader-f16'), mb = (ad.limits.maxBufferSize / 1048576) | 0;
+  return { name, f16, mb, text: `WebGPU OK · ${name} · fp16 ${f16 ? 'yes' : 'NO (the model may fall back to CPU – try a newer driver)'} · max buffer ${mb} MB` };
+}
+async function reportGpu() {
+  if (!navigator.gpu) {
+    setStatus('gpuStat', `No WebGPU here${self.isSecureContext ? '' : ' (page is not a secure context – open via http://localhost or file)'}. Open this in current Chrome or Edge, or the desktop app. The model would run on the processor (slow).`, 'err');
+    return;
+  }
+  try {
+    const ad = await gpuAdapter();
+    if (!ad) {
+      setStatus('gpuStat', 'WebGPU exists but the browser gave no GPU. If the GPU crashed earlier in this session, it stays off until you restart the app or browser (closing the tab is not enough). Otherwise hardware acceleration is off, the GPU is blocklisted, or drivers are old. The model will run on the processor meanwhile (slower).', 'err');
+      showRecover(true); return;
+    }
+    const info = await gpuLabel(ad);
+    setStatus('gpuStat', info.text, info.f16 ? 'ok' : 'err');
+  } catch (e) { setStatus('gpuStat', 'WebGPU adapter request failed: ' + (e.message || e), 'err'); }
+}
+async function watchGpuDevice() {
+  try { const d = await ort.env.webgpu.device; if (!d || d.__rfWatch) return; d.__rfWatch = true;
+    d.lost.then(info => { if (S.recovering) return; S.gpuLost = true; showRecover(true);
+      setStatus('gpuStat', `The GPU was reset${info && info.message ? ' (' + String(info.message).slice(0, 120) + ')' : ''}. Press Recover to reload the model; your work is kept.`, 'err'); }); } catch {}
+}
+async function recoverGpu() {
+  if (S.busy || S.recovering) return; S.recovering = true;
+  $('btnGpuRecover').disabled = $('btnRunRecover').disabled = true;
+  try {
+    setStatus('gpuStat', 'Recovering: releasing the model…'); await tick();
+    if (S.normalSess) { try { await S.normalSess.release(); } catch {} S.normalSess = null; updateButtons(); }
+    const ad = await gpuAdapter();
+    S.forceCpu = !ad || !!S.gpuFailedAfterRecover; S.gpuLost = false; S.gpuFailedAfterRecover = false;
+    showRecover(false);
+    if (S.modelSrc === 'hub') {
+      setStatus('gpuStat', `Recovering: reloading the model on ${S.forceCpu ? 'CPU' : 'GPU'}…`); await tick();
+      await loadNormalModel();
+    } else if (S.modelSrc === 'local') {
+      setStatus('gpuStat', 'The GPU was reset. Load the model again from disk (From disk…).', 'err');
+      showRecover(true);
+    } else await reportGpu();
+    S.recoveredAt = Date.now();
+    if (S.forceCpu) {
+      setStatus('gpuStat', `${ad ? 'The GPU failed again, so the' : 'The browser won\'t give a GPU to pages right now (it turns WebGPU off for the rest of the session after GPU crashes), so the'} model ${S.normalSess ? 'is reloaded' : 'will load'} on the CPU: slower, but you can carry on. Restart the app to get the GPU back, or press Recover again to retry it.`, 'err');
+      showRecover(true);
+    } else if (S.normalSess) setStatus('gpuStat', 'GPU recovered, model reloaded from the cache.', 'ok');
+  } catch (e) { console.error(e); setStatus('gpuStat', 'Recovery failed: ' + (e.message || e) + '. Reload the page, or restart the app.', 'err'); showRecover(true); }
+  finally { S.recovering = false; $('btnGpuRecover').disabled = $('btnRunRecover').disabled = false; }
+}
 async function makeSession(model, external) {
   ort.env.wasm.wasmPaths = ORT_DIST; ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(8, navigator.hardwareConcurrency || 4) : 1;
+  try { if (ort.env.webgpu) ort.env.webgpu.powerPreference = 'high-performance'; } catch {}
   const opts = ep => ({ executionProviders: [ep], graphOptimizationLevel: 'all', ...(external.length ? { externalData: external } : {}) });
   let sess = null, ep = '';
-  if (navigator.gpu) { try { sess = await ort.InferenceSession.create(model, opts('webgpu')); ep = 'webgpu'; }
-    catch (e) { console.warn('webgpu failed', e); setStatus('statNormal', 'WebGPU session failed, using CPU: ' + String(e.message || e).slice(0, 300), 'err'); } }
+  if (navigator.gpu && !S.forceCpu) { try { sess = await ort.InferenceSession.create(model, opts('webgpu')); ep = 'webgpu'; watchGpuDevice(); }
+    catch (e) { console.warn('webgpu failed', e); setStatus('gpuStat', 'WebGPU session failed, using CPU: ' + String(e.message || e).slice(0, 300), 'err'); } }
   if (!sess) { sess = await ort.InferenceSession.create(model, opts('wasm')); ep = 'wasm (CPU – slow)'; }
-  sess.__ep = ep; $('epNormal').textContent = ep; return sess;
+  sess.__ep = ep; $('epNormal').textContent = ep === 'webgpu' ? 'WebGPU' : 'CPU (slow)';
+  if (ep === 'webgpu') {
+    const ad = await gpuAdapter(); const info = ad ? await gpuLabel(ad) : null;
+    setStatus('gpuStat', info ? `Using WebGPU · ${info.name} · fp16 ${info.f16 ? 'yes' : 'no'} · max buffer ${info.mb} MB` : 'Using WebGPU', 'ok');
+  } else {
+    setStatus('gpuStat', 'Using the processor (CPU) — this is much slower than WebGPU.', 'err');
+  }
+  return sess;
 }
 const mkTensor = (type, data, dims) => new ort.Tensor(type, data, dims);
 async function setSession(sess) { if (S.normalSess) { try { await S.normalSess.release(); } catch {} } S.normalSess = sess; updateButtons(); }
@@ -751,6 +818,7 @@ async function loadNormalModel() {
     const model = new Uint8Array(await blobs[0].arrayBuffer()), external = [];
     for (let i = 1; i < all.length; i++) external.push({ path: all[i].path.split('/').pop(), data: new Uint8Array(await blobs[i].arrayBuffer()) });
     await setSession(await makeSession(model, external));
+    S.modelSrc = 'hub';
     setStatus(stat, `Ready · ${all.map(f => f.path.split('/').pop()).join(' + ')}`, 'ok');
   } catch (e) { console.error(e);
     setStatus(stat, 'Load failed: ' + (e.message || e) + '. If downloads are blocked, get the files from Hugging Face and use “From disk…” (select the .onnx and any data file together).', 'err');
@@ -763,6 +831,7 @@ async function loadNormalLocal(fileList) {
     for (const f of files) if (f !== main) external.push({ path: f.name, data: new Uint8Array(await f.arrayBuffer()) });
     setStatus('statNormal', 'Building inference session…'); await tick();
     await setSession(await makeSession(model, external));
+    S.modelSrc = 'local';
     setStatus('statNormal', 'Ready · ' + files.map(f => f.name).join(' + '), 'ok');
   } catch (e) { console.error(e); setStatus('statNormal', 'Load failed: ' + (e.message || e), 'err'); }
 }
@@ -867,7 +936,17 @@ async function runNormals() {
     S.mogeNormal = { nx: nrm[0], ny: nrm[1], nz: nrm[2] }; S.nrmFrom = 'model';
     setStatus('runStatus', `Done in ${((performance.now() - t0) / 1000).toFixed(1)} s · ${W}×${H}${$('tta').checked ? ' · flip averaged' : ''}${MQ ? ' · max quality' : ''}`, 'ok');
     normalsChanged();
-  } catch (e) { if (e.message !== 'cancelled') console.error(e); setStatus('runStatus', e.message === 'cancelled' ? 'Cancelled.' : 'Error: ' + (e.message || e), 'err'); }
+  } catch (e) {
+    if (e.message === 'cancelled') setStatus('runStatus', 'Cancelled.');
+    else {
+      console.error(e);
+      if (isGpuErr(e)) {
+        if (S.recoveredAt && !S.forceCpu) S.gpuFailedAfterRecover = true;
+        showRecover(true);
+        setStatus('runStatus', 'The GPU failed while making normals (' + String(e.message || e).slice(0, 160) + '). Press Recover GPU (the model reloads from the cache), then try again.', 'err');
+      } else setStatus('runStatus', 'Error: ' + (e.message || e), 'err');
+    }
+  }
   finally { S.busy = false; pr.hidden = true; $('btnCancel').hidden = true; updateButtons(); }
 }
 
@@ -1945,6 +2024,7 @@ $('fileProj').onchange = e => { const f = e.target.files[0]; if (f) openProject(
 $('fileNormalModel').onchange = e => { if (e.target.files.length) loadNormalLocal(e.target.files); e.target.value = ''; };
 $('btnLoadNormal').onclick = loadNormalModel;
 $('btnRun').onclick = runNormals; $('btnCancel').onclick = () => { S.cancel = true; };
+$('btnGpuRecover').onclick = $('btnRunRecover').onclick = () => recoverGpu();
 $('fileNrmMap').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f || !S.img) return; S.nrmImg = await loadImg(f); S.nrmPref = 'upload'; S.nrmFrom = 'upload'; $('btnClrNrm').hidden = false; prepUploadNormal(); setMode('relit'); normalsChanged(); };
 $('btnClrNrm').onclick = () => { S.nrmImg = null; S.upNormal = null; S.nrmPref = null; $('btnClrNrm').hidden = true; normalsChanged(); };
 for (const id of ['nrmConv', 'upFlipX']) $(id).onchange = () => { prepUploadNormal(); normalsChanged(); };
@@ -2016,7 +2096,7 @@ const kept = keepLoad();
 S.step = 'pic'; setMode(kept && kept.mode === 'relit' ? 'relit' : 'photo'); setShape('flat'); goStep('pic');   // Photo until you choose Relit; always start flat; last shape is not restored
 $('ltAzV').textContent = $('ltAz').value + '°'; $('ltElV').textContent = $('ltEl').value + '°'; $('ltToneV').textContent = $('ltTone').value + '%'; $('ltGammaV').textContent = (+$('ltGamma').value).toFixed(2); $('bulbHV').textContent = $('bulbH').value + '%';
 $('ltConV').textContent = $('ltCon').value + '%'; $('ltBriV').textContent = (+$('ltBri').value > 0 ? '+' : '') + $('ltBri').value; lt3dUniforms(); updateFields(); updateButtons(); showCanvas(false);
-if (navigator.gpu) navigator.gpu.requestAdapter().then(a => { if (!a) setStatus('statNormal', 'No WebGPU graphics in this browser: the model would run on the processor (slow). Use Chrome or Edge.', 'err'); });
+reportGpu();
 window.__lithoApi = { T3, sampler, show3D, buildBase, baseSTL, setSession, runNormals, still() { S.still = true; }, buildGrid, buildMesh, meshSTL, ltBrightness, ltPlate, plateDims, ltSTL, spec, checkGeometry, fullSize, updateDims, spreadMM, ringHole, setShape, setMode, setView, refresh, openProject, onImage };
 })();
 

@@ -62,7 +62,7 @@ npm run build:win
 
 The files land in `dist/`. On Linux, `npm run build:linux` makes an AppImage in the same folder. Building needs internet access to download Electron and the packaging tools.
 
-The desktop window keeps your pictures on your computer. It still needs internet for its web libraries and fonts, and for the first AI model download; this is not a fully offline bundle. Its model cache and settings are separate from your browser's. Relit uses WebGPU where the graphics card and driver support it; Photo mode does not need an AI model. Save STL opens a normal Save As dialog so you can choose the folder and filename.
+The desktop window keeps your pictures on your computer. It still needs internet for its web libraries and fonts, and for the first AI model download; this is not a fully offline bundle. Its model cache and settings are separate from your browser's. Relit uses WebGPU where the graphics card and driver support it, and the AI normals card shows whether the graphics card or the processor is in use. On Windows the app asks for the high-performance GPU. Photo mode does not need an AI model. Save STL opens a normal Save As dialog so you can choose the folder and filename.
 
 ## Print checks
 

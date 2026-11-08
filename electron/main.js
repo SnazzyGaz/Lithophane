@@ -5,12 +5,29 @@ const { pathToFileURL } = require('node:url');
 // Packaged portable builds unpack into %TEMP%\\<random>\\... On Windows,
 // Chromium's sandbox often cannot start from there and the process aborts
 // immediately (Event Viewer: APPCRASH, exception 0x80000003) after a brief
-// taskbar flash. Do not force --enable-unsafe-webgpu either: WebGPU is
-// available on modern Electron when the GPU supports it, and that flag has
-// caused the same early CHECK abort.
+// taskbar flash. Prefer the zip or setup build, which run from a normal folder.
 if (app.isPackaged) {
   app.commandLine.appendSwitch('no-sandbox');
   app.commandLine.appendSwitch('disable-gpu-sandbox');
+}
+
+// Use the fast graphics card on PCs that also have built-in graphics.
+// Chromium is told directly; on Windows the per-app setting is written once
+// for this exe unless one is already set (Settings → System → Display → Graphics).
+app.commandLine.appendSwitch('force_high_performance_gpu');
+if (process.platform === 'win32') {
+  try {
+    const { spawnSync } = require('node:child_process');
+    const KEY = 'HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences';
+    const q = spawnSync('reg', ['query', KEY, '/v', process.execPath], { windowsHide: true });
+    if (q.status !== 0) {
+      spawnSync('reg', ['add', KEY, '/v', process.execPath, '/t', 'REG_SZ', '/d', 'GpuPreference=2;', '/f'], { windowsHide: true });
+    }
+  } catch {}
+}
+// WebGPU is off by default in Chromium on Linux (it needs Vulkan there).
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('enable-unsafe-webgpu');
 }
 
 const entry = path.join(__dirname, '..', 'index.html');

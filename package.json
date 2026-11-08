@@ -1,6 +1,6 @@
 {
   "name": "relief-forge-litho",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "productName": "Relief Forge Litho",
   "description": "Turn a picture into a lithophane you can 3D print.",
   "private": true,
