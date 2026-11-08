@@ -38,7 +38,14 @@ From the maker of [Relief Forge](https://snazzygaz.github.io/DepthNormal/).
 
 ## A window on your computer
 
-A portable Windows app is on the [Releases](https://github.com/SnazzyGaz/Lithophane/releases/latest) page (the file named like `Relief-Forge-Litho-*-Windows-x64.exe`). It is unsigned, so Windows may show a SmartScreen warning. Only run builds from a source you trust.
+Windows builds are on the [Releases](https://github.com/SnazzyGaz/Lithophane/releases/latest) page. Prefer one of these:
+
+- **Zip:** `Relief-Forge-Litho-*-Windows-x64.zip` — extract the folder anywhere and open `Relief Forge Litho.exe`
+- **Setup:** `Relief-Forge-Litho-*-Windows-setup.exe` — installs for your user account, without needing admin
+
+There is also a single-file portable exe (`Relief-Forge-Litho-*-Windows-portable.exe`). On some PCs it unpacks into a temporary folder and then closes before a window appears; if that happens, use the zip or the setup.
+
+These builds are unsigned, so Windows may show a SmartScreen warning. Only run builds from a source you trust.
 
 You can also run the same app from this folder. Install [Node.js](https://nodejs.org) (a current LTS version), open a terminal here, then run:
 
@@ -47,13 +54,13 @@ npm install
 npm start
 ```
 
-To make a portable Windows app (64-bit):
+To build the Windows zip, setup and portable app (64-bit):
 
 ```sh
 npm run build:win
 ```
 
-The `.exe` is in `dist/`. There is nothing to install: open it to start. It is unsigned, so Windows may show a SmartScreen warning. Only run builds from a source you trust. On Linux, `npm run build:linux` makes an AppImage in the same folder. Building needs internet access to download Electron and the packaging tools.
+The files land in `dist/`. On Linux, `npm run build:linux` makes an AppImage in the same folder. Building needs internet access to download Electron and the packaging tools.
 
 The desktop window keeps your pictures on your computer. It still needs internet for its web libraries and fonts, and for the first AI model download; this is not a fully offline bundle. Its model cache and settings are separate from your browser's. Relit uses WebGPU where the graphics card and driver support it; Photo mode does not need an AI model. Save STL opens a normal Save As dialog so you can choose the folder and filename.
 

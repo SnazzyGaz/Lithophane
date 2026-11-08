@@ -1,6 +1,6 @@
 {
   "name": "relief-forge-litho",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "productName": "Relief Forge Litho",
   "description": "Turn a picture into a lithophane you can 3D print.",
   "private": true,
@@ -8,7 +8,7 @@
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
-    "build:win": "electron-builder --win portable --x64 --publish never",
+    "build:win": "electron-builder --win --x64 --publish never",
     "build:linux": "electron-builder --linux AppImage --x64 --publish never",
     "test": "node scripts/check-geometry.mjs"
   },
@@ -34,12 +34,24 @@
     ],
     "asar": true,
     "win": {
-      "target": "portable",
-      "signAndEditExecutable": false
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "zip", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "signAndEditExecutable": false,
+      "artifactName": "Relief-Forge-Litho-${version}-Windows-${arch}.${ext}"
     },
     "portable": {
-      "artifactName": "Relief-Forge-Litho-${version}-Windows-${arch}.${ext}",
+      "artifactName": "Relief-Forge-Litho-${version}-Windows-portable.exe",
       "unpackDirName": "ReliefForgeLitho"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "Relief-Forge-Litho-${version}-Windows-setup.exe",
+      "shortcutName": "Relief Forge Litho",
+      "deleteAppDataOnUninstall": false
     },
     "linux": {
       "target": "AppImage",
