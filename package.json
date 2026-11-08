@@ -1,6 +1,6 @@
 {
   "name": "relief-forge-litho",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "productName": "Relief Forge Litho",
   "description": "Turn a picture into a lithophane you can 3D print.",
   "private": true,
@@ -35,10 +35,12 @@
     "asar": true,
     "win": {
       "target": "portable",
-      "signAndEditExecutable": false
+      "signAndEditExecutable": false,
+      "fileDescription": "Relief Forge Litho"
     },
     "portable": {
-      "artifactName": "Relief-Forge-Litho-${version}-Windows-${arch}.${ext}"
+      "artifactName": "Relief-Forge-Litho-${version}-Windows-${arch}.${ext}",
+      "unpackDirName": "ReliefForgeLitho"
     },
     "linux": {
       "target": "AppImage",
